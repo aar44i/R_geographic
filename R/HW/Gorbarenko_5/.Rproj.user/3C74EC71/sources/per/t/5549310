@@ -1,0 +1,25 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1572089578629.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "3263093919",
+    "id" : "5549310",
+    "lastKnownWriteTime" : 1572090048,
+    "last_content_update" : 1572090048228,
+    "path" : "C:/Users/gorba/Desktop/Univercity/3 course/R/HW/Gorbarenko_5/5_Gorbarenko.R",
+    "project_path" : "5_Gorbarenko.R",
+    "properties" : {
+        "cursorPosition" : "85,36",
+        "scrollLine" : "50"
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 3,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

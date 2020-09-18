@@ -1,0 +1,26 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1569323277940.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "541946944",
+    "id" : "61515BF8",
+    "lastKnownWriteTime" : 1569324280,
+    "last_content_update" : 1569324280557,
+    "path" : "C:/Users/gorba/Desktop/Univercity/3 курс/R/Tasks/Class_04-2.R",
+    "project_path" : null,
+    "properties" : {
+        "cursorPosition" : "11,4",
+        "scrollLine" : "0",
+        "tempName" : "Untitled1"
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 3,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

@@ -1,0 +1,33 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1571657459696.000,
+    "dirty" : false,
+    "encoding" : "",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "88DDA128",
+    "lastKnownWriteTime" : 2318265438588531822,
+    "last_content_update" : 1571657459696,
+    "path" : null,
+    "project_path" : null,
+    "properties" : {
+        "cacheKey" : "83AABC62",
+        "caption" : "transport_ent",
+        "contentUrl" : "grid_resource/gridviewer.html?env=&obj=transport_ent&cache_key=83AABC62",
+        "displayedObservations" : "10",
+        "environment" : "",
+        "expression" : "transport_ent",
+        "object" : "transport_ent",
+        "preview" : "0",
+        "totalObservations" : "10",
+        "variables" : "5"
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 4,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_dataframe"
+}

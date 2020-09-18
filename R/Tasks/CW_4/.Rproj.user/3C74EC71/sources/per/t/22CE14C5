@@ -1,0 +1,25 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1569768490507.000,
+    "dirty" : false,
+    "encoding" : "x-mac-ukrainian",
+    "folds" : "",
+    "hash" : "3985014956",
+    "id" : "22CE14C5",
+    "lastKnownWriteTime" : 1508688722,
+    "last_content_update" : 1508688722,
+    "path" : "C:/Users/gorba/Desktop/Univercity/3 курс/R/Lera_Work/sr4.R",
+    "project_path" : null,
+    "properties" : {
+        "cursorPosition" : "63,51",
+        "scrollLine" : "15"
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 4,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

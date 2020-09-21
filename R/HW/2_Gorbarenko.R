@@ -36,11 +36,11 @@ if ( UserDistance > 1389){
       i = i + 1   
     } 
 }
-i
+
 #UserDistance
 BackwardCity = Cities$Towns[i - 1] # Город который уже проплыл
 ForwardCity = Cities$Towns[i] # Город до которого еще не доплыл
-880
+
 
 Persent = 100 * UserDistance / 1389 # процент пройденного пути 
 Persent = round(Persent, 0)

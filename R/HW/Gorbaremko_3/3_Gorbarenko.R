@@ -1,17 +1,17 @@
 library(readxl)
 library(tidyverse)
 library(writexl)
-emissions = read_excel('emissions.xlsx', 1,skip = 1, col_types = c("text","numeric","numeric","numeric","numeric","numeric","numeric","numeric","numeric")) # СЃС‡РµС‚ РґР°РЅРЅС‹С… СЃ РїРµСЂРІРѕРіРѕ Р»РёСЃС‚Р° С„Р°РёР»Р°
-capture = read_excel('emissions.xlsx', 2, skip = 1, col_types = c("text","numeric","numeric","numeric","numeric","numeric","numeric","numeric","numeric")) # СЃС‡РµС‚ РґР°РЅРЅС‹С… СЃРѕ РІС‚РѕСЂРѕРіРѕ Р»РёСЃС‚Р° С„Р°РёР»Р°
+emissions = read_excel('emissions.xlsx', 1,skip = 1, col_types = c("text","numeric","numeric","numeric","numeric","numeric","numeric","numeric","numeric")) # счет данных с первого листа фаила
+capture = read_excel('emissions.xlsx', 2, skip = 1, col_types = c("text","numeric","numeric","numeric","numeric","numeric","numeric","numeric","numeric")) # счет данных со второго листа фаила
 
-colnames(emissions) = c( "Region", "y2005", "y2010", "y2011", "y2012", "y2013", "y2014", "y2015", "y2016") # РїРµСЂРµРёРјРµРЅРѕРІР°РЅРёРµ СЃС‚РѕР»Р±С†РѕРІ
+colnames(emissions) = c( "Region", "y2005", "y2010", "y2011", "y2012", "y2013", "y2014", "y2015", "y2016") # переименование столбцов
 colnames(capture) = c( "Region", "y2005", "y2010", "y2011", "y2012", "y2013", "y2014", "y2015", "y2016")
-  str(emissions) # РїСЂРѕРІРµСЂСЏРµРј С‚РёРїС‹ РґР°РЅРЅС‹С… 
+  str(emissions) # проверяем типы данных 
   str(capture)
-Flt_e = stringr::str_detect(emissions$Region, 'Р¤РµРґРµСЂР°С†РёСЏ|С„РµРґРµСЂР°Р»СЊРЅС‹Р№ РѕРєСЂСѓРі') # РёС‰РµРј РѕРєСЂСѓРіР°
-Flt_c = stringr::str_detect(capture$Region, 'Р¤РµРґРµСЂР°С†РёСЏ|С„РµРґРµСЂР°Р»СЊРЅС‹Р№ РѕРєСЂСѓРі') 
+Flt_e = stringr::str_detect(emissions$Region, 'Федерация|федеральный округ') # ищем округа
+Flt_c = stringr::str_detect(capture$Region, 'Федерация|федеральный округ') 
 
-(Flt_emissions = emissions %>% # РџРµСЂРІС‹Р№ РєРѕРЅРІРµР№РµСЂ РјР°РЅРёРїСѓР»СЏС†РёР№ РґР»СЏ РІС‹Р±СЂРѕСЃРѕРІ
+(Flt_emissions = emissions %>% # Первый конвейер манипуляций для выбросов
   mutate(okrug = if_else(Flt_e, Region, NULL)) %>% 
   tidyr::fill(okrug) %>% 
   filter(!Flt_e) %>% 
@@ -21,7 +21,7 @@ Flt_c = stringr::str_detect(capture$Region, 'Р¤РµРґРµСЂР°С†РёСЏ|С„РµРґРµСЂР°Р»СЊ
                names_ptypes = list(year = integer()),
                values_to = 'value'))
 
-(Flt_capture = capture %>% #  Р’С‚РѕСЂРѕР№ РєРѕРЅРІРµР№РµСЂ РјР°РЅРёРїСѓР»СЏС†РёР№ РґР»СЏ СѓР»Р°РІРѕРёРІР°РЅРёСЏ
+(Flt_capture = capture %>% #  Второй конвейер манипуляций для улавоивания
     mutate(okrug = if_else(Flt_c, Region, NULL)) %>% 
     tidyr::fill(okrug) %>% 
     filter(!Flt_c) %>% 
@@ -31,7 +31,7 @@ Flt_c = stringr::str_detect(capture$Region, 'Р¤РµРґРµСЂР°С†РёСЏ|С„РµРґРµСЂР°Р»СЊ
                  names_ptypes = list(year = integer()),
                  values_to = 'value'))
 
-  (Polluters = Flt_emissions %>% # РѕР±СЊРµРґРёРЅРµРЅРёРµ С‚Р°Р±Р»РёС† РїРѕ Р·Р°РіСЂР°СЏР·РЅРµРЅРёСЋ Рё СѓР»Р°РІР»РёРІР°РЅРёСЋ РІ РѕРґРЅСѓ Рё РЅР°С…РѕР¶РґРµРЅРёРµ РјРµР¶РґСѓ РЅРёРјРё СЂР°Р·РЅРёС†С‹
+  (Polluters = Flt_emissions %>% # обьединение таблиц по заграязнению и улавливанию в одну и нахождение между ними разницы
       inner_join(Flt_capture, by = c("Region" = "Region", "year" = "year")) %>% 
       transmute(Region = Region,
                 okrug = okrug.x,
@@ -39,8 +39,8 @@ Flt_c = stringr::str_detect(capture$Region, 'Р¤РµРґРµСЂР°С†РёСЏ|С„РµРґРµСЂР°Р»СЊ
                 emissions = value.x,
                 capture = value.y, delta = capture - emissions) %>% 
       
-      group_by(okrug, year) %>% # РЅР°С…РѕР¶РґРµРЅРёРµ СЃСѓР±СЊРµРєС‚Р° СЃ РЅР°РёС…СѓРґС€РёРј СЃРѕРѕС‚РЅРѕС€РµРЅРёРµРј РІС‹Р±СЂРѕСЃРѕРІ Рё СѓР»Р°РІР»РёРІР°РЅРёСЏ
+      group_by(okrug, year) %>% # нахождение субьекта с наихудшим соотношением выбросов и улавливания
       arrange((delta)) %>% 
       filter(row_number() == 1))
-  write_xlsx(Polluters, "polluters.xlsx") # РІС‹РІРѕРґ С„СЂРµР№РјР° РІ С„Р°РёР» 
+  write_xlsx(Polluters, "polluters.xlsx") # вывод фрейма в фаил 
    

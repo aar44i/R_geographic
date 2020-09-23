@@ -1,5 +1,0 @@
-library(tidyverse)
-library(googledrive)
-library(googlesheets4)
-library(ggrepel)
-

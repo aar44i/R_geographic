@@ -1,10 +1,10 @@
 library(tidyverse)
 data(quakes, package = 'datasets')
-# РџРѕРґСЃС‡РµС‚ РєРѕР»РёС‡РµСЃС‚РІР° Р·РµРјР»РµС‚СЂСЏСЃРµРЅРёР№
-# СЃ Р·Р°РґР°РЅРЅРѕР№ РјР°РіРЅРёС‚СѓРґРѕР№
+# Подсчет количества землетрясений
+# с заданной магнитудой
 (nquakes = quakes %>% 
   group_by(mag) %>% 
-  summarise(ncases = n())) # РєРѕР»РёС‡РµСЃРІС‚Рѕ СЃС‚СЂРѕРє РІ РіСЂСѓРїРїРµ
+  summarise(ncases = n())) # количесвто строк в группе
 
 summarise(group_by(quakes, mag), ncases = n())
 

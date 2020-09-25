@@ -1,0 +1,25 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1600973770312.000,
+    "dirty" : false,
+    "encoding" : "CP1251",
+    "folds" : "",
+    "hash" : "509190520",
+    "id" : "16A8F1C6",
+    "lastKnownWriteTime" : 1600774946,
+    "last_content_update" : 1600774946,
+    "path" : "C:/Users/gorba/DataSciense/R_geographic/R/Tasks/Class_03-2.R",
+    "project_path" : null,
+    "properties" : {
+        "cursorPosition" : "0,0",
+        "scrollLine" : "0"
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 6,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

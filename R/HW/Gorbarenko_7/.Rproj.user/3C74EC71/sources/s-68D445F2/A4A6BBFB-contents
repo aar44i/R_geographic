@@ -1,0 +1,17 @@
+library(readxl)
+library(tidyverse)
+library(writexl)
+
+setwd('C:/Users/gorba/DataSciense/R_geographic/R_HydroPredictions')
+df = read_excel('oka.xlsx')
+summary(df)
+
+df = na.omit(df) # удаляет все строки с пустыми значениями 
+
+plot(x = df$dist, y = df$len)
+hist(df$area, labels = T, breaks = 3)
+
+df$side = factor(df$side) 
+levels(df$side)
+plot(x = df$side, y = df$area)
+

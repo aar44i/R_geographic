@@ -1,0 +1,26 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1601015710163.000,
+    "dirty" : true,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "A4A6BBFB",
+    "lastKnownWriteTime" : 1601015741,
+    "last_content_update" : 1601017017969,
+    "path" : "C:/Users/gorba/DataSciense/R_geographic/R_HydroPredictions/3_P.R",
+    "project_path" : null,
+    "properties" : {
+        "cursorPosition" : "14,15",
+        "scrollLine" : "0",
+        "tempName" : "Untitled1"
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 10,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

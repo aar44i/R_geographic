@@ -1,0 +1,33 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1600979982739.000,
+    "dirty" : false,
+    "encoding" : "",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "E8D047B1",
+    "lastKnownWriteTime" : 2314885530450146100,
+    "last_content_update" : 1600979982739,
+    "path" : null,
+    "project_path" : null,
+    "properties" : {
+        "cacheKey" : "3546DA3E",
+        "caption" : "polluters",
+        "contentUrl" : "grid_resource/gridviewer.html?env=&obj=polluters&cache_key=3546DA3E",
+        "displayedObservations" : "64",
+        "environment" : "",
+        "expression" : "polluters",
+        "object" : "polluters",
+        "preview" : "0",
+        "totalObservations" : "64",
+        "variables" : "6"
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 8,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_dataframe"
+}

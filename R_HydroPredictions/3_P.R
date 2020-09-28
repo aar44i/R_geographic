@@ -6,7 +6,7 @@ setwd('C:/Users/gorba/DataSciense/R_geographic/R_HydroPredictions')
 df = read_excel('oka.xlsx')
 summary(df)
 
-df = na.omit(df) # СѓРґР°Р»СЏРµС‚ РІСЃРµ СЃС‚СЂРѕРєРё СЃ РїСѓСЃС‚С‹РјРё Р·РЅР°С‡РµРЅРёСЏРјРё 
+df = na.omit(df) # удаляет все строки с пустыми значениями 
 
 plot(x = df$dist, y = df$len)
 hist(df$area, labels = T, breaks = 3)
@@ -14,7 +14,7 @@ hist(df$area, labels = T, breaks = 3)
 df$side = factor(df$side) 
 levels(df$side)
 plot(x = df$side, y = df$area)
-# СЂР°Р·РґРµР»РµРЅРёРµ РёРјРµСЋС‰РёС…СЃСЏ РґР°РЅРЅС‹С… РїРѕ РєР°РєРёРј Р»РёР±Рѕ РїСЂРёР·РЅР°РєР°Рј
+# разделение имеющихся данных по каким либо признакам
 df$size = cut(df$area, labels = c('small', 'mid', 'big'), 
               breaks = c(0, 3500, 10000, 100000))
 plot(x = df$size, y = df$len)
@@ -39,8 +39,8 @@ cor_coef = as.character(round(cor(df$area, df$pred_area), 2))
 model_text = paste('y = ', coef_a, '* x', coef_b, "R = ", cor_coef)
 model_text
 
-p = ggplot(df, aes(x = len)) + geom_point(aes(y = area, col = 'С„Р°РєС‚')) + 
-  geom_line(aes(y = pred_area, col = 'РјРѕРґРµР»СЊ'), size = 1) +
+p = ggplot(df, aes(x = len)) + geom_point(aes(y = area, col = 'факт')) + 
+  geom_line(aes(y = pred_area, col = 'модель'), size = 1) +
   geom_text(aes(x =100, y = 40000, label = model_text))
 ggsave(plot = p, filename = 'linear_model.png', device = 'png', width = 10, height = 8,
        units = 'in', dpi = 300)

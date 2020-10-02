@@ -5,10 +5,10 @@ wind = read_excel('wind.xlsx')
 
 main_dir = wind %>% 
   rename(dir = 1) %>%
-  filter(dir != 'С€С‚РёР»СЊ') %>%
+  filter(dir != 'штиль') %>%
   select(-dir) %>%
   sapply(function(x){
     which.max(x)
   })
 tibble(dir = colnames(wind)[-1],
-       main_dir = wind[main_dir, 'РЅР°РїСЂР°РІР».'])
+       main_dir = wind[main_dir, 'направл.'])

@@ -11,7 +11,7 @@ df = na.omit(df) # удал€ет все строки с пустыми значени€ми
 plot(x = df$dist, y = df$len)
 hist(df$area, labels = T, breaks = 3)
 
-df$side = factor(df$side) 
+df$side = or(df$side) 
 levels(df$side)
 plot(x = df$side, y = df$area)
 # разделение имеющихс€ данных по каким либо признакам

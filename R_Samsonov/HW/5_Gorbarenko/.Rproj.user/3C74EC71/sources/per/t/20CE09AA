@@ -1,0 +1,25 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1602009874588.000,
+    "dirty" : false,
+    "encoding" : "CP1251",
+    "folds" : "",
+    "hash" : "223382434",
+    "id" : "20CE09AA",
+    "lastKnownWriteTime" : 1601376076,
+    "last_content_update" : 1601376076,
+    "path" : "C:/Users/gorba/DataSciense/R_geographic/R_Samsonov/Others_Work/HW_2019/Gorbarenko_4/4_Gorbarenko.R",
+    "project_path" : null,
+    "properties" : {
+        "cursorPosition" : "0,0",
+        "scrollLine" : "0"
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 1,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

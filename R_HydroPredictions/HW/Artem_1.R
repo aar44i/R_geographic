@@ -1,0 +1,42 @@
+Sys.setlocale("LC_ALL","Russian")
+library(readxl)
+library(tidyverse)
+library(writexl)
+
+setwd('C:/Users/gorba/DataSciense/R_geographic/R_HydroPredictions/HW/байкал')
+getwd()
+xls_files = list.files(pattern = '.xls')
+# df_15_16 = read_excel('new_data.xlsx')
+
+
+prog_df=data.frame()
+for (x in xls_files){
+  print(x)
+  df=read_xls(x, skip = 10, 
+                 col_names = c('year', 'pred', 'pred1', 'obs'), 
+                 col_types = c('numeric', 'numeric', 'skip', 'numeric'))
+  print(dim(df))
+  prog_df=rbind(prog_df, df)
+}
+prog_df$month=rep(month.abb[c(1, 10:12, 2:9)], each = 54)
+
+
+# добавление данных за 2015-2016 год 
+setwd('C:/Users/gorba/DataSciense/R_geographic/R_HydroPredictions/HW')
+df_15_16 = read_excel('new_data.xlsx', 
+                      col_names = c('date', 'pred', 'obs'),  skip = 1 )
+
+df_15_16$year = format(as.Date(df_15_16$date, format="%d/%m/%Y"),"%Y")
+df_15_16$year = as.numeric(as.character(df_15_16$year))
+df_15_16$month = rep(month.abb[c(1, 10:12, 2:9)])
+
+df_full = prog_df %>%
+  # total <- merge(data frameA,data frameB,by=c("ID","Country"))
+  # merge(df_15_16,  by = c("year" = "year", "month" = "month"))
+  inner_join(df_15_16,  by = c("year" = "year", "month" = "month"))
+# left_join(df_15_16, by = c("year" = "year", "month" = "month"))
+# transmute()
+
+
+
+

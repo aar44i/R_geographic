@@ -1,0 +1,23 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1601984409470.000,
+    "dirty" : false,
+    "encoding" : "CP1251",
+    "folds" : "",
+    "hash" : "2213492231",
+    "id" : "9F77D99F",
+    "lastKnownWriteTime" : 1600771659,
+    "last_content_update" : 1600771659,
+    "path" : "C:/Users/gorba/DataSciense/R_geographic/R/HW_2020/2_Gorbarenko.R",
+    "project_path" : null,
+    "properties" : {
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 3,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

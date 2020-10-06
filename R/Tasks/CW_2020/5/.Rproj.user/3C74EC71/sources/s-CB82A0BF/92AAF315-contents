@@ -9,27 +9,27 @@ capture = read_excel('emissions.xlsx', 2, skip = 1,
                      col_types = c('text', rep('numeric', 8)))
 colnames(capture)[1] = "Region"
 
-emissions = emissions %>% # Ïåðâûé êîíâåéåð ìàíèïóëÿöèé äëÿ âûáðîñîâ
-  mutate(okrug = if_else(str_detect(emissions$Region, 'ôåäåðàëüíûé îêðóã'), Region, NULL)) %>% 
+emissions = emissions %>% # ÐŸÐµÑ€Ð²Ñ‹Ð¹ ÐºÐ¾Ð½Ð²ÐµÐ¹ÐµÑ€ Ð¼Ð°Ð½Ð¸Ð¿ÑƒÐ»ÑÑ†Ð¸Ð¹ Ð´Ð»Ñ Ð²Ñ‹Ð±Ñ€Ð¾ÑÐ¾Ð²
+  mutate(okrug = if_else(str_detect(emissions$Region, 'Ñ„ÐµÐ´ÐµÑ€Ð°Ð»ÑŒÐ½Ñ‹Ð¹ Ð¾ÐºÑ€ÑƒÐ³'), Region, NULL)) %>% 
   fill(okrug) %>% 
-  filter(!str_detect(emissions$Region, 'Ôåäåðàöèÿ|ôåäåðàëüíûé îêðóã'))  %>% 
+  filter(!str_detect(emissions$Region, 'Ð¤ÐµÐ´ÐµÑ€Ð°Ñ†Ð¸Ñ|Ñ„ÐµÐ´ÐµÑ€Ð°Ð»ÑŒÐ½Ñ‹Ð¹ Ð¾ÐºÑ€ÑƒÐ³'))  %>% 
   pivot_longer(cols = 2:9, names_to = "year", values_to = "value")
   
   
-capture = capture %>% # Âòîðîé êîíâåéåð ìàíèïóëÿöèé äëÿ óëàâîèâàíèÿ
-  mutate(okrug = if_else(str_detect(capture$Region, 'ôåäåðàëüíûé îêðóã'), Region, NULL)) %>% 
+capture = capture %>% # Ð’Ñ‚Ð¾Ñ€Ð¾Ð¹ ÐºÐ¾Ð½Ð²ÐµÐ¹ÐµÑ€ Ð¼Ð°Ð½Ð¸Ð¿ÑƒÐ»ÑÑ†Ð¸Ð¹ Ð´Ð»Ñ ÑƒÐ»Ð°Ð²Ð¾Ð¸Ð²Ð°Ð½Ð¸Ñ
+  mutate(okrug = if_else(str_detect(capture$Region, 'Ñ„ÐµÐ´ÐµÑ€Ð°Ð»ÑŒÐ½Ñ‹Ð¹ Ð¾ÐºÑ€ÑƒÐ³'), Region, NULL)) %>% 
   fill(okrug) %>% 
-  filter(!str_detect(capture$Region, 'Ôåäåðàöèÿ|ôåäåðàëüíûé îêðóã'))  %>% 
+  filter(!str_detect(capture$Region, 'Ð¤ÐµÐ´ÐµÑ€Ð°Ñ†Ð¸Ñ|Ñ„ÐµÐ´ÐµÑ€Ð°Ð»ÑŒÐ½Ñ‹Ð¹ Ð¾ÐºÑ€ÑƒÐ³'))  %>% 
   pivot_longer(cols = 2:9, names_to = "year", values_to = "value")
   
-# ïðèñîåäèíåíèå òàáëèö
+# Ð¿Ñ€Ð¸ÑÐ¾ÐµÐ´Ð¸Ð½ÐµÐ½Ð¸Ðµ Ñ‚Ð°Ð±Ð»Ð¸Ñ†
 polluters = inner_join(emissions, capture, by = c("Region" = "Region", 
                                                   "year" = "year", "okrug" = "okrug")) %>% 
-# âû÷èñëåíèå ðàçíèöû
+# Ð²Ñ‹Ñ‡Ð¸ÑÐ»ÐµÐ½Ð¸Ðµ Ñ€Ð°Ð·Ð½Ð¸Ñ†Ñ‹
   transmute(region = Region, okrug = okrug, year = year, emissions = value.x,
             capture = value.y, delta = capture - emissions) %>% 
 
-  group_by(okrug, year) %>% # íàõîæäåíèå ñóáüåêòà ñ íàèõóäøèì ñîîòíîøåíèåì âûáðîñîâ è óëàâëèâàíèÿ
+  group_by(okrug, year) %>% # Ð½Ð°Ñ…Ð¾Ð¶Ð´ÐµÐ½Ð¸Ðµ ÑÑƒÐ±ÑŒÐµÐºÑ‚Ð° Ñ Ð½Ð°Ð¸Ñ…ÑƒÐ´ÑˆÐ¸Ð¼ ÑÐ¾Ð¾Ñ‚Ð½Ð¾ÑˆÐµÐ½Ð¸ÐµÐ¼ Ð²Ñ‹Ð±Ñ€Ð¾ÑÐ¾Ð² Ð¸ ÑƒÐ»Ð°Ð²Ð»Ð¸Ð²Ð°Ð½Ð¸Ñ
   arrange(delta) %>% 
   filter(row_number() == 1)
 write_xlsx(polluters, "polluters.xlsx")

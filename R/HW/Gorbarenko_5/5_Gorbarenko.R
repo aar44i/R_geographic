@@ -3,13 +3,13 @@ library(tidyverse)
 library(RColorBrewer)
 
 routes = read_excel('data-101782-2019-10-14.xlsx', 
-col_types = c(rep('numeric', 4), rep('text', 1), rep('numeric', 3)))  # С‡С‚РµРЅРёРµ С„Р°РёР»Р° (РњР°СЂС€СЂСѓС‚С‹)
+col_types = c(rep('numeric', 4), rep('text', 1), rep('numeric', 3)))  # чтение фаила (Маршруты)
 transport_ent = read_excel('data-101780-2019-10-21.xlsx', 
-col_types = c(rep('numeric', 2), rep('text', 3)))  # С‡С‚РµРЅРёРµ С„Р°РёР»Р° (РўСЂР°РЅСЃРїРѕСЂС‚РЅС‹Рµ РїСЂРµРґРїСЂРёСЏС‚РёСЏ)    
-schedule = read_excel('data-101784-2019-10-14.xlsx') # С‡С‚РµРЅРёРµ С„Р°РёР»Р° (Р РµР№СЃС‹)
+col_types = c(rep('numeric', 2), rep('text', 3)))  # чтение фаила (Транспортные предприятия)    
+schedule = read_excel('data-101784-2019-10-14.xlsx') # чтение фаила (Рейсы)
 
 
-    names = c('РўСЂР°РјРІР°Р№', 'РђРІС‚РѕР±СѓСЃ', 'РўСЂРѕР»Р»РµР№Р±СѓСЃ') # РїРѕРґРіС‚РѕРІРєР° С‚Р°Р±Р»РёС†С‹ РґР»СЏ  1  РіСЂР°С„РёРєР° 
+    names = c('Трамвай', 'Автобус', 'Троллейбус') # подгтовка таблицы для  1  графика 
     (routes_types = routes %>% 
         group_by(route_type) %>% 
         summarise(n()) %>% 
@@ -18,10 +18,10 @@ schedule = read_excel('data-101784-2019-10-14.xlsx') # С‡С‚РµРЅРёРµ С„Р°РёР»Р° (
     colnames(routes_types ) <- c('type', 'col', 'names')
     names_plot = paste(routes_types$names, " (", routes_types$col, ")", sep = "")
     
-    par(mar = c(3, 3, 3, 3)) # РїРѕСЃС‚СЂРѕРµРЅРёРµ 1 РіСЂР°С„РёРєР°
+    par(mar = c(3, 3, 3, 3)) # построение 1 графика
     colors = brewer.pal(length(names_plot),'Accent')
     pie(routes_types$col, names_plot,
-        main = "РЎРѕРѕС‚РЅРѕС€РµРЅРёРµ РєРѕР»РёС‡РµСЃС‚РІР° РјР°СЂС€СЂСѓС‚РѕРІ \n РїРѕ РІРёРґР°Рј С‚СЂР°РЅСЃРїРѕСЂС‚Р°",
+        main = "Соотношение количества маршрутов \n по видам транспорта",
         clockwise = TRUE,
         radius = 1,
         col = colors,
@@ -30,24 +30,24 @@ schedule = read_excel('data-101784-2019-10-14.xlsx') # С‡С‚РµРЅРёРµ С„Р°РёР»Р° (
         cex = 0.7)
     
     
-    (tras_comp = group_by(routes, agency_code) %>% # РїРѕРґРіС‚РѕРІРєР° С‚Р°Р±Р»РёС†С‹ РґР»СЏ  2  РіСЂР°С„РёРєР° 
+    (tras_comp = group_by(routes, agency_code) %>% # подгтовка таблицы для  2  графика 
         summarise(n()) %>% 
         inner_join(transport_ent, by = c('agency_code' = 'agency_code')))
         colnames(tras_comp) = c('agency_code', 'col', 'global_id', 'agency_name', 'agency_url', 'agency_timezone') 
         tras_comp = arrange(tras_comp, col)
         
-        par(mar = c(6, 11, 5, 5)) # РїРѕСЃС‚СЂРѕРµРЅРёРµ 2 РіСЂР°С„РёРєР°
+        par(mar = c(6, 11, 5, 5)) # построение 2 графика
         barplot(tras_comp$col,
                 names.arg = tras_comp$agency_name,
-                main = 'Р Р°СЃРїСЂРµРґРµР»РµРЅРёРµ РјР°СЂС€СЂСѓС‚РѕРІ РїРѕ РїРµСЂРµРІРѕР·С‡РёРєР°Рј',
-                xlab = 'РљРѕР»РёС‡РµСЃС‚РІРѕ РјР°СЂС€СЂСѓС‚РѕРІ',
+                main = 'Распределение маршрутов по перевозчикам',
+                xlab = 'Количество маршрутов',
                 las = 1,
                 cex.names = 0.7,
                 horiz = T,
                 xlim = c(0,1000),
                 col = 'lightblue')
       
-    sched_hour = as.numeric(substr(schedule$departure_time, 0,2)) # РїРѕРґРіС‚РѕРІРєР° С‚Р°Р±Р»РёС†С‹ РґР»СЏ  3  РіСЂР°С„РёРєР° 
+    sched_hour = as.numeric(substr(schedule$departure_time, 0,2)) # подгтовка таблицы для  3  графика 
     sched_min = round(as.numeric(substr(schedule$departure_time, 4,5))/60, digits = 1)
     sched_time = sched_hour + sched_min 
     sched_time = sapply(sched_time, function(X) 
@@ -55,14 +55,14 @@ schedule = read_excel('data-101784-2019-10-14.xlsx') # С‡С‚РµРЅРёРµ С„Р°РёР»Р° (
                                         else X = X})
     schedule = mutate(schedule, sched_time)
         
-    par(mar = c(5, 5, 5, 5)) # РїРѕСЃС‚СЂРѕРµРЅРёРµ 3 РіСЂР°С„РёРєР°
+    par(mar = c(5, 5, 5, 5)) # построение 3 графика
     colors = rep('lightblue', 24) 
     colors[9] = 'red'
     colors[19] = 'red'
     hist(sched_time, 
-         main = 'РљРѕР»РёС‡РµСЃС‚РІРѕ РѕС‚РїСЂР°РІР»РµРЅРёР№ СЃ РѕСЃС‚Р°РЅРѕРІРѕРє РѕР±С‰РµСЃС‚РІРµРЅРЅРѕРіРѕ С‚СЂР°РЅСЃРїРѕСЂС‚Р°',
-         xlab = 'Р§Р°СЃ',
-         ylab = 'РљРѕР»РёС‡РµСЃС‚РІРѕ РѕС‚РїСЂР°РІР»РµРЅРёР№',
+         main = 'Количество отправлений с остановок общественного транспорта',
+         xlab = 'Час',
+         ylab = 'Количество отправлений',
          breaks = seq(0, 24, 1),
          xlim = c(0, 24),
          ylim = c(0, 25000),
@@ -75,7 +75,7 @@ schedule = read_excel('data-101784-2019-10-14.xlsx') # С‡С‚РµРЅРёРµ С„Р°РёР»Р° (
          axis(side = 1, at = seq(0, 24, 1),tck = - 0.07, cex.axis = 0.7) 
              
 
-    stops = schedule %>% # РїРѕРґРіС‚РѕРІРєР° С‚Р°Р±Р»РёС†С‹ РґР»СЏ  4  РіСЂР°С„РёРєР°  
+    stops = schedule %>% # подгтовка таблицы для  4  графика  
     group_by(trip_id = as.character(trip_id)) %>%
     summarise(num_stops = n(), 
               max_time = max(sched_time), 
@@ -86,19 +86,19 @@ schedule = read_excel('data-101784-2019-10-14.xlsx') # С‡С‚РµРЅРёРµ С„Р°РёР»Р° (
     summarise(delta = median(delta))
       
     
-    par(mar = c(5, 5, 5, 5)) # РїРѕСЃС‚СЂРѕРµРЅРёРµ 4 РіСЂР°С„РёРєР°
+    par(mar = c(5, 5, 5, 5)) # построение 4 графика
     plot(stops$num_stops, 
          stops$delta, 
-         main = 'РџСЂРѕРґРѕР»Р¶РёС‚РµР»СЊРЅРѕСЃС‚СЊ РјР°СЂС€СЂСѓС‚РѕРІ',
-         xlab = 'РљРѕР»РёС‡РµСЃС‚РІРѕ РѕСЃС‚Р°РЅРѕРІРѕРє РІ РјР°СЂС€СЂСѓС‚Рµ',
-         ylab = 'РџСЂРѕРґРѕР»Р¶РёС‚РµР»СЊРЅРѕСЃС‚СЊ РјР°СЂС€СЂСѓС‚Р°, С‡',
+         main = 'Продолжительность маршрутов',
+         xlab = 'Количество остановок в маршруте',
+         ylab = 'Продолжительность маршрута, ч',
          pch = 20, 
          col = 'gray',
          ylim = c(0, 2), 
          cex.axis =  0.7,
          cex.lab = 0.7)
     lines(med$num_stops, med$delta, type = 'o', pch = 20, col = 'red')
-    legend('topright',  'РјРµРґРёР°РЅРЅРѕРµ Р·РЅР°С‡РµРЅРёРµ', lwd = 1, pch = 20, col = 'red',cex = 0.7, bg = 'white')
+    legend('topright',  'медианное значение', lwd = 1, pch = 20, col = 'red',cex = 0.7, bg = 'white')
     grid()
 
             

@@ -30,13 +30,11 @@ df_15_16$year = format(as.Date(df_15_16$date, format="%d/%m/%Y"),"%Y")
 df_15_16$year = as.numeric(as.character(df_15_16$year))
 df_15_16$month = rep(month.abb[c(1, 10:12, 2:9)])
 
-df_full = prog_df %>%
-  # total <- merge(data frameA,data frameB,by=c("ID","Country"))
-  # merge(df_15_16,  by = c("year" = "year", "month" = "month"))
-  inner_join(df_15_16,  by = c("year" = "year", "month" = "month"))
-# left_join(df_15_16, by = c("year" = "year", "month" = "month"))
-# transmute()
-
-
-
+i = 0
+for (i in length(prog_df$year)){
+  if (prog_df$year[i] == df_15_16$year[i] && prog_df$month[i] == df_15_16$month[i]){
+    prog_df$pred[i] = df_15_16$pred[i]
+    prog_df$obs[i] = df_15_16$obs[i]
+  }
+}
 

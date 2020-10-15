@@ -32,7 +32,7 @@ df_15_16$month = rep(month.abb[c(1, 10:12, 2:9)])
 
 i = 0
 for (i in length(prog_df$year)){
-  if (prog_df$year[i] == df_15_16$year[i] && prog_df$month[i] == df_15_16$month[i]){
+  if (prog_df$year == df_15_16[i,]$year& prog_df$month == df_15_16[i,]$month){
     prog_df$pred[i] = df_15_16$pred[i]
     prog_df$obs[i] = df_15_16$obs[i]
   }

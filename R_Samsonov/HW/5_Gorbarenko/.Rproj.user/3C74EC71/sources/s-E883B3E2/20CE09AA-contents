@@ -1,7 +1,8 @@
 library(readxl)
 library(tidyverse)
 library(writexl)
-
+getwd()
+setwd()
 soil_data = read_excel('soil_data.xls', 1,  # чтение фаила 
                 col_types = c(rep('numeric', 2), rep('text', 240)))
 description = read_excel('soil_data.xls',2 , col_names = FALSE, 

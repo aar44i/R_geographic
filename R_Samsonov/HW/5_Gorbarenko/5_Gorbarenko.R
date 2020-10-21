@@ -48,7 +48,7 @@ pie(trees$value, names,
 #  Содержание органического углерода в верхнем слое почвы (0-30 см)
 
 soil <- read_excel('PgC.xlsx', range = 'A5:B16', col_names = c('Region', 'PgS'),
-                   col_types = c('text', 'numeric')) # чтение данных
+                   col_types = c('text', 'numeric')) 
 
 par(mar = c(6, 12, 4, 2)) 
 barplot(soil$PgS, horiz = T, 

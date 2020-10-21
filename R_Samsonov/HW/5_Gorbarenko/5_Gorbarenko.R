@@ -5,10 +5,12 @@ library(RColorBrewer)
 getwd()
 temp = read.table('graph.txt', skip = 5)
 colnames(temp) = c('year', 'no_smooth', 'lowess')
-trees = read.csv('fao_treecover_extent__ha.csv')
-soil = read_xlsx('PgC.xlsx', skip = 1)[3:14,]
+
+
+
 
 # Среднегодовая аномалия температуры
+trees = read.csv('fao_treecover_extent__ha.csv')
 plot(temp$year, temp$no_smooth, 
      main = list('Аномалия температуры по отношению к средней\n за период 1951-1980 (по данным NASA, 2020 г.)', cex = 0.8),
      xlab = 'Год',
@@ -45,8 +47,22 @@ pie(trees$value, names,
 
 #  Содержание органического углерода в верхнем слое почвы (0-30 см)
 
-soil = soil %>%
-   rename(name = `...1`, Tier = `Tier 1`) 
-soil = tibble(soil$name, as.data.frame(lapply(soil[, 2:6], as.numeric))) %>% 
-  rename(name = `soil$name`)
+soil = read_xlsx('PgC.xlsx', skip = 1)[3:14,] %>% 
+   rename(name = '...1', Tier = 'Tier 1')
+
+# soil = tibble(soil$name, as.data.frame(lapply(soil[, 2:6], as.numeric))) %>% 
+#   rename(name = soil$name)
+# par(mar = c(5, 10, 4, 2))
+# barplot(soil$Topsoil, names.arg = soil$name, 
+#         horiz = T,
+#         las = 1,
+#         main = 'Содержание органического углерода в верхнем слое почвы 
+#         (0-30 см)\n по климатическим регионам IPCC (2010 г.)',
+#         xlab = 'PgC',
+#         col = rainbow(length(soil$name))) 
+
+
+
+
+
 

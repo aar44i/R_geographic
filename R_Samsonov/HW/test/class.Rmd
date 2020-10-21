@@ -1,0 +1,16 @@
+---
+title: "5.7.2"
+output: html_document
+---
+подключение бибиотек:
+```{r}
+library(tidyverse)
+library(googlesheets4)
+```
+
+загрузка данных:
+```{r}
+water = read_sheet('1qpvu21VCsvz-hYu5s1h0fc-3mRpxvsF1Y2M0Ie3d3CU')
+agro
+```
+

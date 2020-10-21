@@ -47,20 +47,29 @@ pie(trees$value, names,
 
 #  Содержание органического углерода в верхнем слое почвы (0-30 см)
 
-soil = read_xlsx('PgC.xlsx', skip = 1)[3:14,] %>% 
-   rename(name = '...1', Tier = 'Tier 1')
+soil <- read_excel('PgC.xlsx', range = 'A5:B16', col_names = c('Region', 'PgS'),
+                   col_types = c('text', 'numeric')) # чтение данных
 
-# soil = tibble(soil$name, as.data.frame(lapply(soil[, 2:6], as.numeric))) %>% 
-#   rename(name = soil$name)
-# par(mar = c(5, 10, 4, 2))
-# barplot(soil$Topsoil, names.arg = soil$name, 
-#         horiz = T,
-#         las = 1,
-#         main = 'Содержание органического углерода в верхнем слое почвы 
-#         (0-30 см)\n по климатическим регионам IPCC (2010 г.)',
-#         xlab = 'PgC',
-#         col = rainbow(length(soil$name))) 
+par(mar = c(6, 12, 4, 2)) 
+barplot(soil$PgS, horiz = T, 
+        main = 'Содержание органического углерода в верхнем слое почвы (0-30 см)\nпо климатическим регионам IPCC',
+        names.arg = soil$Region, las = 1, xlab = 'PgC', 
+        xlim = c(0, 140), col = rainbow(12), 
+        cex.main = 2, cex.names = 1.2, cex.lab = 1.7, 
+        cex.axis = 1.2)
 
+# распределение высот действующих вулканов мира
+volcanos <- read_excel('GVP_Volcano_List_Holocene.xlsx', skip = 1) 
+
+par(mar = c(5, 6, 5, 0))
+hist(volcanos$`Elevation (m)`, xlim = c(-6000, 8000), breaks = seq(-6000, 7000, 500),
+     main = 'Распределение высот действующих вулканов мира\nподанным Смитсоновского института, 2020 г.',
+     xlab = 'Абсолютная отметка вершины над уровнем моря, м', ylab = 'Количество',
+     col = c(rep(rgb(0.3, 0.3, 1, 0.8), 12), rep(rgb(1, 0.5, 0.3), 14)), 
+     cex.axis = 1.1, cex.lab = 1.7, cex.main = 2) 
+legend('right', c('Подводные', 'Надводные'),
+       fill = c(rgb(0.3, 0.3, 1, 0.8), rgb(1, 0.5, 0.3)), 
+       cex = 1.5, text.width = 2000) 
 
 
 

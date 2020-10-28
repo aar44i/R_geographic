@@ -1,0 +1,16 @@
+---
+title: "HomeWork 7"
+author: "Gorbarenko Artem"
+date: "26 10 2020"
+output: html_document
+---
+```{r, echo = FALSE,include=FALSE}
+library(tidyverse)
+library(googlesheets4)
+```
+
+Загрузка каталога метеостанций:
+```{r, include=FALSE}
+catalog = read_sheet('1Q6HCY4jxiYefjPdWrN5erwgEee-Gz_BywqZW2mQcftw') 
+```
+

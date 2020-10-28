@@ -1,9 +1,9 @@
 {
-    "path" : "C:/Users/gorba/DataSciense/R_geographic/R_Samsonov/HW/6_Gorbarenko",
-    "sortOrder" : [
+    "path": "C:/Users/gorba/DataSciense/R_geographic/R_Samsonov/HW/6_Gorbarenko",
+    "sortOrder": [
         {
-            "ascending" : true,
-            "columnIndex" : 2
+            "columnIndex": 2,
+            "ascending": true
         }
     ]
 }

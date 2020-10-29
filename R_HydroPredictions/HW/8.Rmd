@@ -1,0 +1,53 @@
+---
+title: "Байкал"
+author: "Gorbarenko Artem"
+date: "29 10 2020"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r, echo = FALSE,include=FALSE}
+library(readxl)
+library(ggplot2)
+
+```
+Считывание данных.
+```{r}
+setwd('C:/Users/gorba/DataSciense/R_geographic/R_HydroPredictions/Class/Mine')
+baikal = read_excel('baikal.xlsx')
+baikal = na.omit(baikal)
+```
+Фильтрация данных. Для анализа был выбран месяц август. 
+```{r}
+baikal_aug = baikal[baikal$month == 'Aug',]
+```
+
+График распределения наблюдаемой величины и спрогнозируемой. 
+```{r}
+ggplot(baikal_aug, aes(x = year)) + geom_point(aes(y = pred, col = 'прогноз')) + 
+  geom_line(aes(y = pred, col= 'Прогноз')) + 
+  geom_point(aes(y = obs, col = 'Наблюдения')) + 
+  geom_line(aes(y = obs, col = 'Наблюдения'))
+```
+
+Расчет основных статистических характеристик. 
+```{r}
+mean_pred = mean(baikal_aug$pred)
+sd_pred = sd(baikal_aug$pred)
+sd_fact = sd(baikal_aug$obs)
+
+baikal_aug$err = baikal_aug$pred - baikal_aug$obs
+baikal_aug$AE = abs(baikal_aug$pred - baikal_aug$obs)
+
+ME = mean(baikal_aug$err)
+MAE = mean(baikal_aug$AE)
+
+MSE = mean(baikal_aug$err ^ 2)
+RMSE = sqrt(MSE)
+
+SSc = RMSE / sd_fact
+
+R = cor(baikal_aug$pred, baikal_aug$obs)
+```
+

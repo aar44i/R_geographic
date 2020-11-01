@@ -25,7 +25,7 @@ baikal_aug = baikal[baikal$month == 'Aug',]
 
 График распределения наблюдаемой величины и спрогнозируемой. 
 ```{r}
-ggplot(baikal_aug, aes(x = year)) + geom_point(aes(y = pred, col = 'прогноз')) + 
+ggplot(baikal_aug, aes(x = year)) + geom_point(aes(y = pred, col = 'Прогноз')) + 
   geom_line(aes(y = pred, col= 'Прогноз')) + 
   geom_point(aes(y = obs, col = 'Наблюдения')) + 
   geom_line(aes(y = obs, col = 'Наблюдения'))

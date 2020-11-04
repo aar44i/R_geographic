@@ -1,0 +1,34 @@
+---
+title: '9'
+author: "Gorbarenko Artem"
+date: "03 11 2020"
+output: html_document
+---
+
+```{r}
+library(sf)
+# library(stars)
+library(raster)
+library(mapview)
+library(tidyverse)
+```
+создание 
+```{r}
+data(quakes)
+pts = st_as_sf(quakes, 
+               coords = c('long', 'lat'),
+               remove = FALSE, 
+               crs = 4326)
+pts
+```
+визуализация 
+```{r}
+plot(pts['depth'])
+plot(pts %>%  st_geometry())
+```
+
+интерактивныея визуализация
+```{r}
+mapview(pts, zcol = 'mag', cex = 'depth')
+```
+

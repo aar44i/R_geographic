@@ -1,0 +1,46 @@
+---
+title: "9_2"
+author: "Gorbarenko Artem"
+date: "03 11 2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+
+library(sf)
+# library(stars)
+library(raster)
+library(mapview)
+library(tidyverse)
+```
+
+```{r}
+data(storms)
+pts = storms %>% 
+  filter(name == 'Barry', year == 1983) %>% 
+  arrange(month, day, hour) %>% 
+  st_as_sf(coords = c('long', 'lat'), 
+           crs = 4326,
+           remove = F)
+track = st_coordinates(pts) %>% 
+  st_linestring() %>% 
+  st_sfc(crs = 4326)
+mapview(track, color = 'black') + 
+  mapview(pts, cex = 'wind', zcol = 'pressure')
+
+```
+
+то же самое черех ggplot
+```{r}
+box = st_bbox(track) %>%  
+  st_as_sfc() %>% 
+  st_buffer(5) %>% 
+  st_bbox()
+
+ggplot()  + 
+geom_sf(data = track) + 
+  geom_sf(data = pts, mapping = aes(color = pressure, size = wind)) + 
+  xlim(box[1], box[3]) + 
+  ylim(box[2], box[4])
+```
+

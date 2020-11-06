@@ -11,4 +11,46 @@ library(stars)
 library(raster)
 library(mapview)
 library(tidyverse)
+```
+
+
+```{r setup, include=FALSE}
+st_layers('Satino.gpkg')
+```
+
+```{r}
+hydro_lines = st_read('Satino.gpkg', 'WaterLine')
+hydro_polygons = st_read('Satino.gpkg', 'WaterPolygon')
+forest  = st_read('Satino.gpkg', 'ForestBorders')
+roads = st_read('Satino.gpkg', 'Roads')
+countours =  st_read('Satino.gpkg', 'WaterPolygon')
+
+
+dem = read_stars('Satino_DEM.tif')
+
+```
+```{r}
+mapview(forest) + 
+  mapview(hydro_lines) + 
+  mapview(forest) + 
+  mapview(roads) + 
+  mapview(countours)
+```
+
+```{r}
+plot(dem)
+```
+
+```{r}
+plot(forest %>% st_geometry(),
+     col = 'forestgreen')
+plot(countours, col = 'brown', add = T)
+plot(hydro_lines, col = 'blue', add = T)
+plot(hydro_polygons, col = 'blue', add = T)
+plot(roads, col = 'red', add = T)
+
+```
+
+
+
 

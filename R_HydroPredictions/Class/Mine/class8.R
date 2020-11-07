@@ -15,7 +15,7 @@ ggplot(protva_h, aes(x= Dates, y = Absolute_Levels, col = 'Протва - с. С
 protva_meteo <- read_xlsx('protva_meteo_2008-2020.xlsx')
 protva_meteo$dates <- as.Date(protva_meteo$dates)
 protva_meteo <- melt(protva_meteo, id.vars = c('dates', 'index'))
-protva_meteo <- dcast(protva_meteo, dates~index+variable)
+protva_meteo <- dcast(protva_meteo, dates~variable+index)
 summary(protva_meteo)
 
 df <- merge(protva_h, protva_meteo, by.x = 'Dates', by.y = 'dates')
@@ -56,10 +56,17 @@ cm1 <- reshape2::melt(cm)
 ggplot(cm1[cm1$Var1 == 'Absolute_Levels(t+1)',], aes(x=Var2, y=value, fill=value)) + 
   geom_bar(stat = 'identity') + theme(axis.text.x = element_text(angle=90))
 
-
+target = 'Absolute_Levels(t+5)'
+features = colnames(df[,-1])[!grepl('t\\+', colnames(df[,-1]))]
+features
+features_levels = features[grepl('Levels', features)]
+features_levels
 # разделение на тренинг и тест
 
 ggplot(df, aes(x=Dates, y=Absolute_Levels)) + geom_line() + geom_point()
+
+model_cols = paste(c('Dates', target, features_levels), sep = "")
+model_cols
 
 train_df <- df[(year(df$Dates) > 2013) & (year(df$Dates) < 2020),]
 test_df <- df[year(df$Dates) <= 2013,]
@@ -86,3 +93,5 @@ val_df$pred <- predict(mod1, newdata = val_df)
 ggplot(val_df, aes(x=Dates)) + geom_line(aes(y=Absolute_Levels, col='obs')) +
   geom_line(aes(y=pred, col='mod'))
 
+linranry(verification)
+verify(obs = test_df$`Absolute_levels(t+1)`, pred = test_df$pred1), obs.type = 'cont', frcst.type = 'cont')

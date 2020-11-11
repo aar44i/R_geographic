@@ -30,9 +30,9 @@ len = length(st_coordinates(route)[ , 1])
 end = st_point(st_coordinates(route)[len, ]) %>% 
   st_sfc() %>% 
   st_sf()
-
-p_area = paste("Пашня \n", round(st_area(field) / 10000, digits = 2), "\n га")
-color = adjustcolor("green", alpha = 0.5)
+field = st_transform(field, as.character(crs(image)))
+route = st_transform(route, as.character(crs(image)))
+stations = st_transform(stations, as.character(crs(image)))
 
 mapview(route, color = 'black') +
   mapview(field, color = 'green') + mapview(stations) + 

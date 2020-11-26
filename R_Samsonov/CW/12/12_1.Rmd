@@ -1,0 +1,24 @@
+---
+title: '11'
+author: "Gorbarenko Artem"
+date: "24 11 2020"
+output: html_document
+---
+##Задание 12_2
+```{r setup, eval=FALSE}
+library(raster)
+library(sf)
+library(stars)
+library(tidyverse)
+```
+
+Индекс континентальности Хромова рассчитывается по формуле  
+K=(A−5.4sinϕ)/A , где  А— годовая амплитуда хода температуры,  ϕ — широта точки. Используя данные WorldClim, рассчитайте растр индекса континентальности на территорию суши и нанесите его на карту средствами tmap
+
+
+```{r}
+temp = raster::getData("worldclim", var = "tmean", res = 10) %>% 
+  st_as_stars() / 10
+# plot(temp)
+```
+

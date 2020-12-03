@@ -19,6 +19,15 @@ K=(A−5.4sinϕ)/A , где  А— годовая амплитуда хода т
 ```{r}
 temp = raster::getData("worldclim", var = "tmean", res = 10) %>% 
   st_as_stars() / 10
-# plot(temp)
+plot(temp)
+```
+
+Вычисления:
+```{r}
+res = temp %>% 
+  mutate(phi = st_coordinates(.)$y)
+
+temp_range = temp %>% 
+  st_apply(c("x", "y"), range)
 ```
 

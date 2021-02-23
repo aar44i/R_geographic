@@ -1,0 +1,93 @@
+---
+title: '8'
+author: "Gorbarenko Artem"
+date: "27 12 2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(circular)
+library(readxl)
+library(NPCirc)
+library(pracma)
+```
+
+Загрузка гидрологических данных 
+
+```{r}
+hydro_dirs = read_xlsx('hydro_dirs.xlsx') %>% 
+  mutate(cdir = circular(dir, 
+                         units = 'degrees',
+                         zero = pi/2,
+                         rotation = 'clock',
+                         template = 'geographics'))
+dems = unique(hydro_dirs$dem)
+```
+
+Функция построения диаграмм
+
+```{r}
+plot_directions = function(dirs, title) {
+  kden = kern.den.circ(dirs)
+  peak_1 = findpeaks(kden$y, sortstr = T)[1,2]
+  peak_2 = findpeaks(kden$y, sortstr = T)[3,2]
+  
+  
+  modal_1 = kden$x[peak_1]
+  modal_1 = ifelse(modal_1 < 0, 360 + modal_1, modal_1)
+  modal_2 = kden$x[peak_2]
+  modal_2 = ifelse(modal_2 < 0, 360 + modal_2, modal_2)
+  
+  xp_1 = sin(pi * modal_1 / 180)
+  yp1 = cos(pi * modal_1 / 180)
+  xp_2 = sin(pi * modal_2 / 180)
+  yp2 = cos(pi * modal_2 / 180)
+  
+  plot.circular(dirs, 
+                cex = 0.2, 
+                stack = TRUE, 
+                sep = 0.001,
+                axes = FALSE,
+                main = title,
+                shrink = 1.5,
+                )
+  rose.diag(dirs, 
+            bins = 24, 
+            col = 'gray70',
+            border = 'gray30',
+            prop = 2, 
+            add = TRUE, 
+            tick = FALSE,
+            lwd = 0.5)
+  
+  legend('topright', title = 'Направление течения', c('Основное', 'Второстепенное'),
+         col = c('orangered', 'blue'), lwd = c(2, 1, 1))
+    
+  lines(kden, shrink = 3, 
+        join = F, col = 'steelblue')
+  
+  lines(c(0, xp_1), c(0, yp1),
+        lwd = 2, col = 'orangered')
+  lines(c(0, xp_2), c(0, yp2),
+        lwd = 1, col = 'blue')
+  
+  text(x = 1.4 * xp_1, y = 1.4 * yp1, 
+       col = 'orangered',
+       labels = paste0(round(modal_1, 0), '°'))
+  text(x = 1.4 * xp_2, y = 1.4 * yp2, 
+       col = 'blue',
+       labels = paste0(round(modal_2, 0), '°')) 
+}
+```
+
+Построение диаграмм
+```{r}
+for (d in dems) {
+  dirs = hydro_dirs %>% 
+    filter(dem == d) %>% 
+    pull(cdir)
+  plot_directions(c(dirs, dirs + 180), d)}
+```
+```
+

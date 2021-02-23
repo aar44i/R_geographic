@@ -1,0 +1,239 @@
+---
+title: "Задание 13"
+output: html_notebook
+---
+0. Подключите все необходимые библиотеки
+```{r}
+library(tidyverse)
+library(readxl)
+library(sf)
+library(sp)
+library(rnaturalearth)
+library(stars)
+library(akima)
+library(gstat)
+library(fields)
+library(ggplot2)
+library(RColorBrewer)
+library(ggspatial)
+```
+1. Произведите чтение входных данных
+```{r}
+seas = st_read("World_Seas_IHO_v3.shp")
+
+land = ne_download(scale = 50, 
+                   type = "land", 
+                   category = "physical") %>% 
+  st_as_sf() %>% 
+  st_transform(4326)
+
+copepod = read.table("copepod__b400-compilation.txt", 
+                     fill = TRUE, 
+                     header = FALSE, 
+                     quote = "",
+                     skip = 3, 
+                     sep = ",")
+```
+2. Отфильтруйте таблицу морей, чтобы оставить в ней только Охотское море
+```{r}
+okhotsk_sea = filter(seas, 
+                     seas$NAME == "Sea of Okhotsk")
+```
+3. Отфильтруйте таблицу биомассы так, чтобы остались точки:
+— координаты которых в полях LONGITDE и LATITUDE попадают в ограничивающий прямоугольник Охотского моря;
+— у которых нижняя граница наблюдений (LOWER_Z) располагается на глубже 200 м;
+— которые относятся к летним месяцам (6-8)
+— которые попадают в промежуток годов 1949-1951.
+4. Превратите отфильтрованные точки в объекты sf и выполните их точную выборку в пределах полигона Охотского моря.
+```{r}
+#создадим рамка по контуру Охотского моря
+bbox = okhotsk_sea %>% 
+  st_bbox()
+
+#запишем названия столбцов
+copepod_colnames = c("SHP-CRUISE","YEAR","MON","DAY","TIMEgmt",
+                     "TIMEloc", "LATITUDE","LONGITUDE","UPPER_Z","LOWER_Z",
+                     "T", "GEAR","MESH","NMFS_PGC","ITIS_TSN", "MOD",
+                     "LIF", "PSC","SEX","V","WaterStrained", 
+                     "Original-VALUE", "Orig-UNITS", "value",
+                     "UNITS","F1","F2","F3","F4", "VALUE-per-area",
+                     "UNITS_1","F1_1","F2_1","F3_1","F4_1",
+                     "SCIENTIFIC NAME -[ modifiers]-","RECORD-ID",
+                     "DATASET-ID","SHIP","PROJ","INST")
+copepod = copepod[,1:length(copepod_colnames)]
+colnames(copepod) = copepod_colnames
+
+#отфильтруем согласно условию и превратим в sf
+copepod_sf = copepod %>% 
+  filter((LATITUDE >= bbox$ymin) & 
+         (LATITUDE <= bbox$ymax) & 
+         (LONGITUDE >= bbox$xmin) & 
+         (LONGITUDE <= bbox$xmax) &
+         (LOWER_Z <= 200) & 
+         (MON >= 6) & 
+         (MON <= 8) &
+         (YEAR >= 1949) & 
+         (YEAR <= 1951)) %>% 
+  st_as_sf(coords = c("LONGITUDE", "LATITUDE"), crs = 4326) 
+
+#выберем точки в пределах полигона Охотского моря 
+copepod_sf = copepod_sf[okhotsk_sea,]
+```
+5. Перепроецируйте точки, полигон моря и сушу в цилиндрическую равнопромежуточную проекцию
+```{r}
+land = land %>% st_transform(4087)
+okhotsk_sea = okhotsk_sea %>% st_transform(4087)
+copepod_sf = copepod_sf %>% st_transform(4087)
+```
+6. Выполните построение регулярной сетки типа stars для интерполяции. Сетка должна покрывать Охотское море (перепроецированное!) целиком с шагом 10 км по обоим направлениям
+```{r}
+copepod_grid = okhotsk_sea %>% 
+  st_bbox %>% 
+  st_as_stars(dx = 10000, 
+              dy = 10000, 
+              crs = st_crs(4087))
+```
+7. Для каждого из нижеперечисленных методов интерполяции последовательно:
+— Выполните интерполяцию биомассы зоопланктона на единицу объема воды (переменная VALUE-per-volu — её желательно перед интерполяцией переименовать, дав более лаконичное название) и запишите результат в построенную сетку под соответствующим названием (используйте mutate)
+
+Интерполяция на основе триангуляции (Метод Акимы)
+```{r}
+#определим значение для интерполяции
+z_int = copepod_sf$value %>% 
+  as.character() %>% 
+  as.double()
+
+#интерполяция
+copepod_grid = copepod_grid %>% 
+  mutate(akima_spline = interpp(x = st_coordinates(copepod_sf)[,1],
+                                y = st_coordinates(copepod_sf)[,2],
+                                z = z_int,
+                                xo = st_coordinates(copepod_grid)[,1],
+                                yo = st_coordinates(copepod_grid)[,2],
+                                linear = FALSE,
+                                extrap = TRUE,
+                                duplicate = "mean")$z)
+```
+Интерполяция методом обратно взвешенных расстояний (степень 2)
+```{r}
+copepod_grid = copepod_grid %>% 
+  mutate(idw_2 = idw(z_int ~ 1,
+                     locations = copepod_sf, 
+                     newdata = copepod_grid, 
+                     idp = 2.0)$var1.pred)
+```
+Интерполяция методом радиальных базисных функций (сплайны с натяжением)
+```{r}
+#инициализируем процесс интерполяции
+pred = Tps(x = st_coordinates(copepod_sf), 
+           Y = z_int, 
+           scale.type = "unscaled", 
+           lambda = 0)
+
+#интерполяция
+copepod_grid = copepod_grid %>% 
+  mutate(z_tps = predict(pred, st_coordinates(copepod_grid)))
+```
+— Постройте изолинии с заданным шагом.
+```{r}
+#интервалы для изолиний
+interv = c(0, 50, 100, 200, 300, 500, 700, 1000)
+
+cont_akima = st_contour(copepod_grid['akima_spline'],
+                        breaks = interv,
+                        contour_lines = TRUE)
+cont_idw = st_contour(copepod_grid['idw_2'],
+                      breaks = interv,
+                      contour_lines = TRUE)
+cont_tps = st_contour(copepod_grid['z_tps'],
+                      breaks = interv,
+                      contour_lines = TRUE)
+```
+— Визуализируйте полученное распределение в виде карты средствами ggplot2.
+```{r}
+copepod_grid = copepod_grid[okhotsk_sea,]
+
+map_bbox = st_bbox(copepod_grid)
+#создадим палитру
+palette = brewer.pal(length(interv), "PuBuGn")
+
+#создадим легенду
+legend = scale_fill_manual(name = 'мг/куб. м',
+                                values = palette,
+                                labels = paste(interv[-length(interv)],
+                                               '-', 
+                                               interv[-1]),
+                                drop = FALSE, 
+                                na.translate = FALSE,
+                                guide = guide_legend(reverse = TRUE))
+
+#создадим градусную сетку
+grad = st_graticule(x = c(132, 40, 170, 70), 
+                            ndiscr = 10, 
+                            st_crs(4326)) %>%
+  st_transform(4087)
+```
+Интерполяция на основе триангуляции (метод Акимы)
+```{r}
+ggplot() +
+  geom_stars(data = cut(copepod_grid['akima_spline'], interv), ) +
+  labs(title = "Биомасса зоопланктона (июнь-август, глубины 0-200 м)",
+          subtitle = "Интерполяция на основе триангуляции (метод Акимы)",
+          caption = "Карта составлена по данным COPEPOD,\nэкспедиции 1949-1951 гг.") +
+  geom_sf(data = land) +
+  legend +
+  geom_sf(data = copepod_sf, size = 0.4, color = "black") +
+  geom_sf(data = grad, lty = "dotted") +
+  geom_sf(cont_akima, color = 'black', size = 0.5) +
+  xlab("") +
+  ylab("") +
+  annotation_scale(bar_cols = c("gray", "white"), 
+                   line_width = 0.8, 
+                   location = c("br")) +
+  theme_bw() +
+  coord_sf(xlim = c(map_bbox$xmin, map_bbox$xmax), 
+           ylim = c(map_bbox$ymin, map_bbox$ymax))
+```
+Интерполяция методом обратно взвешенных расстояний (степень 2)
+```{r}
+ggplot() +
+  geom_stars(data = cut(copepod_grid['idw_2'], interv), ) +
+  labs(title = "Биомасса зоопланктона (июнь-август, глубины 0-200 м)",
+          subtitle = "Интерполяция методом обратно взвешенных расстояний (степень 2)",
+          caption = "Карта составлена по данным COPEPOD,\nэкспедиции 1949-1951 гг.") +
+  geom_sf(data = land) +
+  legend +
+  geom_sf(data = copepod_sf, size = 0.4, color = "black") +
+  geom_sf(data = grad, lty = "dotted") +
+  geom_sf(cont_idw, color = 'black', size = 0.5) +
+  xlab("") +
+  ylab("") +
+  annotation_scale(bar_cols = c("gray", "white"), 
+                   line_width = 0.8, 
+                   location = c("br")) +
+  theme_bw() +
+  coord_sf(xlim = c(map_bbox$xmin, map_bbox$xmax), 
+           ylim = c(map_bbox$ymin, map_bbox$ymax))
+```
+Интерполяция методом радиальных базисных функций (сплайны с натяжением)
+```{r}
+ggplot() +
+  geom_stars(data = cut(copepod_grid['z_tps'], interv), ) +
+  labs(title = "Биомасса зоопланктона (июнь-август, глубины 0-200 м)",
+          subtitle = "Интерполяция методом радиальных базисных функций\n(сплайны с натяжением)",
+          caption = "Карта составлена по данным COPEPOD,\nэкспедиции 1949-1951 гг.") +
+  geom_sf(data = land) +
+  legend +
+  geom_sf(data = copepod_sf, size = 0.4, color = "black") +
+  geom_sf(data = grad, lty = "dotted") +
+  geom_sf(cont_tps, color = 'black', size = 0.5) +
+  xlab("") +
+  ylab("") +
+  annotation_scale(bar_cols = c("gray", "white"), 
+                   line_width = 0.8, 
+                   location = c("br")) +
+  theme_bw() +
+  coord_sf(xlim = c(map_bbox$xmin, map_bbox$xmax), 
+           ylim = c(map_bbox$ymin, map_bbox$ymax))
+```
+Интерполяция методом Акимы получилась "угловатой", метод ОВР сформировал вокруг каждой исходной точки замкнутые изолинии, которые особенно бросаются в глаза в  северной части полигона. Метод РБФ дает наиболее плавные изолинии, сглаживая неравномерность распределения исходных данных и не выделяет отдельные точки, поэтому интерполяция методом РБФ существенно ближе к ожидаемому распределению показателя.

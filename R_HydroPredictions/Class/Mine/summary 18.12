@@ -1,0 +1,135 @@
+---
+title: "8+9"
+author: "Gorbarenko Artem"
+date: "18 12 2020"
+output: html_document
+---
+подключение библиотек
+```{r}
+Sys.setlocale("LC_ALL","Russian")
+library(readxl)
+library(ggplot2)
+library(reshape2)
+library(dplyr)
+library(lubridate)
+library(plotly)
+```
+счет данных по Протве
+```{r}
+setwd('C:/Users/gorba/DataSciense/R_geographic/R_HydroPredictions/Class/Mine')
+protva_h <- read.csv('protva_sz_2008-2020.csv')
+protva_h$Dates <- as.Date(protva_h$Dates, format = '%d-%m-%Y')
+summary(protva_h)
+p <- ggplot(protva_h, aes(x=Dates, y=Absolute_Levels, col='Протва - с. Спас-Загорье')) + geom_line() + geom_point()
+p <- ggplotly(p)
+p
+protva_meteo <- read_xlsx('protva_meteo_2008-2020.xlsx')
+protva_meteo$dates <- as.Date(protva_meteo$dates)
+protva_meteo <- melt(protva_meteo, id.vars = c('dates', 'index'))
+protva_meteo <- dcast(protva_meteo, dates~variable+index)
+summary(protva_meteo)
+df <- merge(protva_h, protva_meteo, by.x = 'Dates', by.y = 'dates')
+summary(df)
+df <- df[,-3] # Выкинули Relative levels
+df <- na.omit(df)
+summary(df)
+```
+построение набора предикторов
+```{r}
+shift = 7
+
+shift_data <- function(x, shift, target_name){
+  for(col in colnames(x[,-1])){
+    for(i in seq(1, shift, 1)){
+      print(col)
+      print(i)
+      col_lag <- paste0(col, '(t-', i, ')')
+      col_lead <- paste0(target_name, '(t+', i, ')')
+      x[[col_lag]] <- lag(x[[col]], n = i)
+      x[[col_lead]] <- lead(x[[target_name]], n = i)
+    }
+  }
+  return(x)
+}
+
+df <- shift_data(df, shift, 'Absolute_Levels')
+
+```
+анализ корреляции и автокорреляции 
+```{r}
+acf(df$Absolute_Levels)
+
+ach <- acf(df$Absolute_Levels, plot = F)
+ach
+
+cm <- cor(df[,-1], use = "complete.obs")
+
+cm1 <- reshape2::melt(cm)
+
+ggplot(cm1[cm1$Var1 == 'Absolute_Levels(t+5)',], aes(x=Var2, y=value, fill=value)) + 
+  geom_bar(stat = 'identity') + theme(axis.text.x = element_text(angle=90))
+
+
+target = 'Absolute_Levels(t+5)'
+features <- colnames(df[,-1])[!grepl('t\\+', colnames(df[,-1]))]
+features
+features_levels <- features[grepl('Levels', features)]
+features_levels
+```
+разделение на тренинг и тест 
+```{r}
+pl = ggplot(df, aes(x=Dates, y=Absolute_Levels)) + geom_line() + geom_point()
+pl <- ggplotly(pl)
+pl
+
+model_cols <- paste(c('Dates', target, features_levels), sep = "")
+model_cols
+
+train_df <- df[(year(df$Dates) > 2013) & (year(df$Dates) < 2020), model_cols]
+test_df <- df[year(df$Dates) <= 2013, model_cols]
+val_df <- df[year(df$Dates) == 2020, model_cols]
+```
+построение множественной линейной регрессии
+```{r}
+mod5 <- lm(data = train_df[,-1], formula = `Absolute_Levels(t+5)` ~ .)
+summary(mod5)
+formula(mod5)
+coef(mod5)
+```
+проверка на тестовой выборке
+```{r}
+test_df$pred5 <- predict(mod5, newdata = test_df)
+
+ggplot(test_df, aes(x=Dates)) + geom_line(aes(y=`Absolute_Levels(t+5)`, col='obs')) +
+  geom_line(aes(y=pred7, col='mod'))
+
+ggplot(test_df, aes(x=`Absolute_Levels(t+5)`, y=pred5)) + geom_point() + geom_abline() + geom_smooth(method = 'lm')
+cor(test_df$pred5, test_df$`Absolute_Levels(t+5)`, use = "complete.obs")
+```
+
+предсказание в оперативном режиме
+```{r}
+
+val_df$pred5 <- predict(mod5, newdata = val_df)
+
+ggplot(val_df, aes(x=Dates)) + geom_line(aes(y=Absolute_Levels, col='obs')) +
+  geom_line(aes(y=pred5, col='mod'))
+
+```
+
+сохраняем результаты
+```{r}
+save(train_df, test_df, val_df, file = 'model5.RData')
+
+load('model5.RData')
+```
+
+Использование пакета  hydroGOF для оценки прогноза
+
+```{r}
+library(hydroGOF)
+
+gof(sim = test_df$pred5, obs = test_df$`Absolute_Levels(t+5)`)
+ggof(sim = test_df$pred5, obs = test_df$`Absolute_Levels(t+5)`, dates = test_df$Dates)
+```
+

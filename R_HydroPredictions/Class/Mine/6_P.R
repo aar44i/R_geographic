@@ -4,41 +4,41 @@ setwd('C:/Users/gorba/DataSciense/R_geographic/R_HydroPredictions/Class/Mine')
 baikal = read_excel('baikal.xlsx')
 baikal = na.omit(baikal) #
 
-baikal_aug = baikal[baikal$month == 'Aug',]
+baikal_mar = baikal[baikal$month == 'Mar',]
 
-# август
-ggplot(baikal_aug, aes(x = year)) + geom_point(aes(y = pred, col = 'прогноз')) + 
+# март
+ggplot(baikal_mar, aes(x = year)) + geom_point(aes(y = pred, col = 'прогноз')) + 
   geom_line(aes(y = pred, col= 'Прогноз')) + 
   geom_point(aes(y = obs, col = 'Наблюдения')) + 
   geom_line(aes(y = obs, col = 'Наблюдения'))
 
-mean_pred = mean(baikal_aug$pred)
-sd_pred = sd(baikal_aug$pred)
-sd_fact = sd(baikal_aug$obs)
+mean_pred = mean(baikal_mar$pred)
+sd_pred = sd(baikal_mar$pred)
+sd_fact = sd(baikal_mar$obs)
 
-baikal_aug$err = baikal_aug$pred - baikal_aug$obs
-baikal_aug$AE = abs(baikal_aug$pred - baikal_aug$obs)
+baikal_mar$err = baikal_mar$pred - baikal_mar$obs
+baikal_mar$AE = abs(baikal_mar$pred - baikal_mar$obs)
 
-ME = mean(baikal_aug$err)
-MAE = mean(baikal_aug$AE)
+ME = mean(baikal_mar$err)
+MAE = mean(baikal_mar$AE)
 
-MSE = mean(baikal_aug$err ^ 2)
+MSE = mean(baikal_mar$err ^ 2)
 RMSE = sqrt(MSE)
 
 SSc = RMSE / sd_fact
 
-R = cor(baikal_aug$pred, baikal_aug$obs)
+R = cor(baikal_mar$pred, baikal_mar$obs)
 
 
-ggplot(baikal_aug, aes(x = obs, y = pred, col = err)) + 
+ggplot(baikal_mar, aes(x = obs, y = pred, col = err)) + 
   geom_point(size = 3) + xlim(0,2000) + ylim(0,2000) + geom_abline() + 
   geom_vline(xintercept = 1000) + geom_hline(yintercept  = 1000)
 
-baikal_aug$opr = baikal_aug$err >=0.674 * sd_fact
-summary(baikal_aug)
+baikal_mar$opr = baikal_mar$err >=0.674 * sd_fact
+summary(baikal_mar)
 
 
-OPR = sum(baikal_aug$opr) / length(baikal_aug$opr)
+OPR = sum(baikal_mar$opr) / length(baikal_mar$opr)
 
 error_check = function(x){
   mean_pred = mean(x$pred)
@@ -52,11 +52,11 @@ error_check = function(x){
   MSE = mean(x$err ^ 2)
   RMSE = sqrt(MSE)
   SSc = RMSE / sd_fact
-  R = cor(baikal_aug$pred, baikal_aug$obs)
+  R = cor(baikal_mar$pred, baikal_mar$obs)
   result = list(mean_pred, mean_fact, sd_pred, sd_fact, ME, MAE, MSE, RMSE, SSc, R)
-  # names(result) = c('F_mean')
+  names(result) = c('mean_pred', 'mean_fact', 'sd_pred', 'sd_fact', 'ME', 'MAE', 'MSE', 'RMSE', 'SSc', 'R')
   return(result)
 }
 
-error_apr = error_check(baikal_aug)
+error_apr = error_check(baikal_mar)
 error_apr

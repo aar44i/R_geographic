@@ -1,0 +1,169 @@
+---
+title: "13_Gorbarenko"
+author: "Gorbarenko Artem"
+date: "04 12 2020"
+output: html_document
+---
+
+```{r}
+library(sp)
+library(gstat)
+library(akima) 
+library(ggspatial)
+library(tidyverse)
+library(sf)
+library(fields)
+library(ggplot2)
+library(raster)
+library(stars)
+library(rnaturalearth)
+```
+
+Загрузка данных
+```{r}
+land = ne_download(scale = 50, type = 'land', category = 'physical') %>% 
+  st_as_sf() 
+sea_bound = st_read('World_Seas_IHO_v3.shp')
+copepod = read_delim('copepod__b400-compilation.txt', ',', skip = 3, col_types = cols(.default = col_number()))
+```
+Фильтрация таблицы морей по границам Охотского моря.
+
+```{r}
+okhotsk_bound = filter(sea_bound, stringr::str_detect(sea_bound$NAME, 'Okhotsk'))
+```
+
+Фильтрация таблицы биомассы
+
+```{r}
+box_okhotsk = st_bbox(okhotsk_bound)
+copepod_okhotsk = filter(copepod, LATITUDE >= box_okhotsk[2] & LATITUDE <= box_okhotsk[4] & LONGITDE >= box_okhotsk[1] & LONGITDE <= box_okhotsk[3] & LOWER_Z <= 200 & MON >= 6 & MON <= 8 & YEAR >= 1949 & YEAR <= 1951) 
+```
+
+Превращение отфильтрованных точек в объекты sf, точная выборка точек в пределах Охотского моря
+
+```{r}
+copepod_sf = st_as_sf(copepod_okhotsk, coords = c('LONGITDE', 'LATITUDE'), crs = st_crs(sea_bound))
+copepod_finale = copepod_sf[okhotsk_bound,]
+```
+Перепроецирование точек и построение регулярной сетки
+
+```{r}
+okhotsk_bound = st_transform(okhotsk_bound, crs = '+proj=eqc')
+copepod_finale = st_transform(copepod_finale, crs = '+proj=eqc')
+land = st_transform(land, crs = '+proj=eqc')
+box_finale = st_bbox(okhotsk_bound)
+grid = st_as_stars(box_finale, dx = 10000, dy = 10000)
+```
+
+#Интерполяция на основе триангуляции
+
+```{r}
+biomass_levels = c(0, 50, 100, 200, 300, 500, 700, 1000)
+biomass_ncolors = length(biomass_levels) - 1
+biomass_colors = colorRampPalette(c('#E0FFFF', '#1E90FF', '#008080'))
+land_FarEast = st_crop(land, box_finale)
+graticule = st_crop(st_graticule(lon = seq(135, 165, 5), lat = seq(45, 60, 5)), box_okhotsk)
+copepod_finale = copepod_finale %>% rename(biomass = 'VALUE-per-volu')
+
+interpolation = grid %>% 
+  mutate(z_akima = interpp(x = st_coordinates(copepod_finale)[, 1],
+                           y  = st_coordinates(copepod_finale)[, 2],
+                           z = copepod_finale$biomass, 
+                           xo = st_coordinates(grid)[, 1], 
+                           yo = st_coordinates(grid)[, 2], 
+                           linear = FALSE, 
+                           extrap = TRUE, 
+                           duplicate = 'mean')$z)
+
+interpolation = interpolation[okhotsk_bound]
+
+cont_trngl = stars:::st_as_raster(interpolation['z_akima']) %>% 
+ rasterToContour(levels = biomass_levels) %>% 
+ st_as_sf()
+```
+Визуализация
+
+```{r}
+ggplot() +
+  geom_sf(data = land_FarEast, color = 'grey') +
+  geom_stars(data = cut(interpolation['z_akima'], breaks = biomass_levels)) +
+  scale_fill_manual(name = 'мг/куб.м',
+                    values = biomass_colors(biomass_ncolors),
+                    guide = guide_legend(reverse = TRUE),
+                    na.translate = FALSE) +
+  geom_sf(data = cont_trngl) +
+  geom_sf(data = copepod_finale, size = 0.6) +
+  geom_sf(data = graticule, color = 'grey60') +
+  theme_bw() +
+  annotation_scale(data = okhotsk_bound, bar_cols = c('grey', 'white'), location = 'br') +
+  xlab('') + ylab('') +
+  ggtitle('Биомасса зоопланктона (июнь-август, глубины 0-200 м)',
+          subtitle = 'Интерполяция на основе триангуляции (метод Акимы)') +
+  labs(caption = 'Карта составлена по данным COPEPOD,\nэкспедиции 1949-1951 гг.') 
+```
+
+#Интерполяция методом IDW
+
+```{r}
+interpolation = interpolation %>% 
+  mutate( z_idw2 = 
+            as.vector(idw(biomass ~ 1, locations = copepod_finale, newdata = grid, idp = 2.0)$var1.pred))
+interpolation = interpolation[okhotsk_bound]
+
+cont_idw2 = stars:::st_as_raster(interpolation['z_idw2']) %>% 
+  rasterToContour(levels = biomass_levels) %>% 
+  st_as_sf()
+```
+Визуализация
+```{r}
+ggplot() +
+  geom_sf(data = land_FarEast, color = 'grey') +
+  geom_stars(data = cut(interpolation['z_idw2'], breaks = biomass_levels)) +
+  scale_fill_manual(name = 'мг/куб.м',
+                           values = biomass_colors(biomass_ncolors),
+                           guide = guide_legend(reverse = TRUE),
+                           na.translate = FALSE) +
+  geom_sf(data = cont_idw2) +
+  geom_sf(data = copepod_finale, size = 0.6) +
+  geom_sf(data = graticule, color = 'grey60') +
+  theme_bw() +
+  annotation_scale(data = okhotsk_bound, bar_cols = c('grey', 'white'), location = 'br') +
+  xlab('') + ylab('') +
+  ggtitle('Биомасса зоопланктона (июнь-август, глубины 0-200 м)',
+          subtitle = 'Интерполяция методом обратно взвешенных расстояний (степень 2)') +
+  labs(caption = 'Карта составлена по данным COPEPOD,\nэкспедиции 1949-1951 гг.') 
+```
+#Интерполяция методом радиальных базисных функций
+```{r}
+interpolation = interpolation %>% 
+  mutate(z_tps = predict(Tps(st_coordinates(copepod_finale), copepod_finale$biomass, scale.type = 'unscaled', lambda = 0), st_coordinates(grid)))
+interpolation = interpolation[okhotsk_bound]
+
+cont_tps = stars:::st_as_raster(interpolation['z_tps']) %>% 
+  rasterToContour(levels = biomass_levels) %>% 
+  st_as_sf()
+```
+
+Визуализация
+
+
+```{r}
+ggplot() +
+  geom_sf(data = land_FarEast, color = 'grey') +
+  geom_stars(data = cut(interpolation['z_tps'], breaks = biomass_levels)) +
+  scale_fill_manual(name = 'мг/куб.м',
+                           values = biomass_colors(biomass_ncolors),
+                           guide = guide_legend(reverse = TRUE),
+                           na.translate = FALSE) +
+  geom_sf(data = cont_tps) +
+  geom_sf(data = copepod_finale, size = 0.6) +
+  geom_sf(data = graticule, color = 'grey60') +
+  theme_bw() +
+  annotation_scale(data = okhotsk_bound, bar_cols = c('grey', 'white'), location = 'br') +
+  xlab('') + ylab('') +
+  ggtitle('Биомасса зоопланктона (июнь-август, глубины 0-200 м)',
+          subtitle = 'Интерполяция методом радиальных базисных функций') +
+  labs(caption = 'Карта составлена по данным COPEPOD,\nэкспедиции 1949-1951 гг.')
+  
+```
+В данной работе были произведены расчёты и визуализация различных методов интерполяции: интерполяция на основе триагуляции (метод Акимы), интерполяция методом обратно взвешенных расстояний (степень 2) и методом радиальных базисных функций для данных по суммарной биомассе планктона в Охотском море. Карта, построенная по первому методу, смотрится грубовато за счёт нагягивания полей на рёбра триангуляции. Вряд ли в реальности наблюдается именно такая картина. Карта, построенная по второму методу, значительно отличается от первой. В целом у неё вид более “круглый”, так как на ней прослеживаются отдельные замкнутые области с повышенными/пониженными значениями, что опять же мало соответствует действительности. Можно отметить, что наиболее близким к реальности оказался последний метод. Он удачно сглаживает неравномерность распределения исходных данных, находясь в “золотой середине” между предыдущими 2 методами.

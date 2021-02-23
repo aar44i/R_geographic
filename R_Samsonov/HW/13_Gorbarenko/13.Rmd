@@ -1,0 +1,143 @@
+---
+title: '13'
+author: "Gorbarenko Artem"
+date: "04 12 2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(sf)
+library(stars)
+library(raster)
+library(tidyverse)
+library(sp)
+library(akima) # библиотека для интерполяции на основе триангуляции
+library(gstat) # библиотека для геостатистической интерполяции, построения трендов и IDW
+library(deldir) # библиотека для построения триангуляции Делоне и диаграммы Вороного
+library(fields) # радиальные базисные функции (сплайны минимальной кривизны)
+library(ggspatial)
+library(mapview)
+library(RColorBrewer)
+library(readxl)
+library(ggplot2)
+library(rnaturalearth)
+```
+
+
+```{r}
+
+copepod = read.table("copepod__b400-compilation.txt", 
+                     fill = TRUE, 
+                     header = FALSE, 
+                     quote = "",
+                     skip = 3, 
+                     sep = ",")
+
+w_sea = st_read("World_Seas_IHO_v3.shp")
+```
+```{r}
+land = ne_download(scale = 50,  type = "land", category = "physical") %>% 
+  st_as_sf() %>% 
+  st_transform(4326)
+# mapview(land)
+```
+
+```{r}
+okh_sea = filter(w_sea, w_sea$NAME == "Sea of Okhotsk")
+```
+Границы
+```{r}
+brdr =  st_bbox(okh_sea)
+```
+новые имена столбцоы
+```{r}
+copepod_cols = c("SHP-CRUISE","YEAR","MON","DAY","TIMEgmt",
+      "TIMEloc", "LATITUDE","LONGITUDE","UPPER_Z","LOWER_Z","T","GEAR","MESH","NMFS_PGC",
+      "ITIS_TSN", "MOD","LIF", "PSC","SEX","V","WaterStrained", "Original-VALUE",    
+      "Orig-UNITS", "value", "UNITS","F1","F2","F3","F4", "VALUE-per-area",
+      "UNITS_1","F1_1","F2_1","F3_1","F4_1", "SCIENTIFIC NAME -[ modifiers]-","RECORD-ID",
+      "DATASET-ID","SHIP","PROJ","INST")
+copepod = copepod[,1:length(copepod_cols)]
+colnames(copepod) = copepod_cols
+```
+
+Проведем фильтрацию и переконвертируем в sf
+```{r}
+copepod_sf = copepod %>%
+  filter((LATITUDE >= brdr$ymin) & (LATITUDE <= brdr$ymax) & (LONGITUDE >= brdr$xmin) & 
+        (LONGITUDE <= brdr$xmax) &  (LOWER_Z <= 200) & (MON >= 6) &  (MON <= 8) &
+        (YEAR >= 1949) & (YEAR <= 1951)) %>%
+  st_as_sf(coords = c("LONGITUDE", "LATITUDE"), crs = 4326)
+# mapview(copepod_sf)
+copepod_sf = copepod_sf[okh_sea,]
+# mapview(copepod_sf)
+```
+Перепроицирование в цилиндрическую равнопропромежуточную
+```{r}
+okh_sea = okh_sea %>% st_transform(4087)
+land = land %>% st_transform(4087)
+copepod_sf = copepod_sf %>% st_transform(4087)
+# mapview(copepod_sf)
+```
+Построение регулярной сетки для интерполяции с шагом 10 км по обоим направлениям
+```{r}
+copepod_grid = okh_sea %>% 
+  st_bbox %>% 
+  st_as_stars(dx = 10000, dy = 10000, crs = st_crs(4087))
+```
+интерполяция
+```{r}
+int = copepod_sf$value %>% 
+  as.character() %>% 
+  as.double()
+
+# задание интервалов для построения изолиний
+range = c(0, 50, 100, 200, 300, 500, 700, 1000)   
+```
+
+МЕТОД АКИМЫ Интерполяция на основе триангуляции
+```{r}
+copepod_grid1 = copepod_grid %>% 
+  mutate(a_spl = interpp(x = st_coordinates(copepod_sf)[,1], y = st_coordinates(copepod_sf)[,2], z = int,
+                         xo = st_coordinates(copepod_grid)[,1], yo = st_coordinates(copepod_grid)[,2],
+                         linear = FALSE, extrap = TRUE, duplicate = "mean")$z)
+```
+
+
+```{r}
+#интервалы для изолиний
+rng_akima = st_contour(copepod_grid1, breaks = range, contour_lines = TRUE)
+```
+
+Интерполяция методом обратно взвешенных расстояний (степень 2)
+
+```{r}
+copepod_grid2 = copepod_grid %>% 
+  mutate(idw_2 = idw(int ~ 1, locations = copepod_sf, newdata = copepod_grid, idp = 2.0)$var1.pred)
+```
+
+```{r}
+#интервалы для изолиний
+rng_idw_2 = st_contour(copepod_grid1, breaks = range, contour_lines = TRUE)
+```
+
+Интерполяция методом радиальных базисных функций (сплайны с натяжением)
+
+```{r}
+#инициализируем процесс интерполяции
+pred = Tps(x = st_coordinates(copepod_sf), 
+           Y = z_int, 
+           scale.type = "unscaled", 
+           lambda = 0)
+
+#интерполяция
+copepod_grid3 = copepod_grid %>% 
+  mutate(z_tps = predict(pred, st_coordinates(copepod_grid)))
+
+cont_tps = st_contour(copepod_grid3, `range` = range, contour_lines = TRUE)
+```
+
+
+
+
+

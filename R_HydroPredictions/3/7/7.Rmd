@@ -1,0 +1,55 @@
+---
+title: "Ященко Мария"
+output: html_document
+---
+# прогнозы притока
+* прогнозы месячного разрешения
+```{r}
+
+```
+
+```{r}
+library(readxl)
+baikal <- read_xlsx('baikal.xlsx')
+baikal = na.omit(baikal)
+```
+
+```{r}
+library(ggplot2)
+ggplot(baikal, aes(x=year, y=obs, col=month)) + geom_line() + geom_point() + theme_light(base_size = 15)
+```
+
+```{r}
+baikal_may = baikal[baikal$month == 'May',]
+
+
+```
+
+```{r}
+error_check = function(x){
+  x
+  mean_pred = mean(x$pred)
+  mean_fact = mean(x$obs)
+  sd_pred = sd(x$pred)
+  sd_fact = sd(x$obs)
+  x$err = x$pred - x$obs
+  x$AE = abs(x$pred - x$obs)
+  ME = mean(x$err)
+  MAE = mean(x$AE)
+  MSE = mean(x$err ^ 2)
+  RMSE = sqrt(MSE)
+  SSc = RMSE / sd_fact
+  R = cor(baikal_may$pred, baikal_may$obs)
+  result = list(mean_pred, mean_fact, sd_pred, sd_fact, ME, MAE, MSE, RMSE, SSc, R)
+  names(result) = c('mean_pred', 'mean_fact', 'sd_pred', 'sd_fact', 'ME', 'MAE', 'MSE', 'RMSE', 'SSc', 'R')
+  return(result)
+}
+
+```
+
+применение функции по поиску ошибок
+```{r}
+error_may = error_check(baikal_may)
+error_may
+```
+

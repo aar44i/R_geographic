@@ -1,0 +1,192 @@
+---
+title: "10_Gorbarenko"
+author: "Gorbarenko Artem"
+date: "21 11 2020"
+output: html_document
+---
+
+Загрузка библиотек
+```{r}
+library(sf)
+library(tmap)
+library(readxl)
+library(raster)
+library(tibble)
+library(mapview)
+library(eurostat)
+library(classInt)
+library(gapminder)
+library(tidyverse)
+library(googlesheets)
+library(rnaturalearth)
+```
+Карта №1«Климатические пояса» Задание входных данных и перепроецирование
+
+```{r}
+```
+
+
+```{r}
+rivers = ne_download(scale = 110, 
+                     type = 'rivers_lake_centerlines', 
+                     category = 'physical') %>% 
+  st_as_sf() 
+
+lakes = ne_download(scale = 110, 
+                    type = 'lakes', 
+                    category = 'physical') %>% 
+  st_as_sf()
+
+ocean = ne_download(scale = 110, 
+                    type = 'ocean', 
+                    category = 'physical') %>% 
+  st_as_sf() 
+
+geographic_lines = ne_download(scale = 110, 
+                               type = 'geographic_lines', 
+                               category = 'physical')%>% 
+  st_as_sf() 
+
+climate = st_read('climates.gpkg') 
+
+mapview(rivers) +  mapview(lakes) + mapview(ocean) + mapview(geographic_lines)
+
+
+```
+
+```{r}
+climate$Type = ordered(climate$Type, levels = c('Арктический', 'Субарктический', 'Умеренный', 'Субтропический', 'Тропический', 'Субэкваториальный', 'Экваториальный')) #для упорядочения названий
+climate = climate %>% 
+  arrange(Type)
+
+maps = lst( ocean, rivers, lakes, geographic_lines, climate)   # создание списка для возможности общего трансформирования
+maps_w = lapply(maps, st_transform, crs = "+proj=wag5")  # псевдоцилиндрическая проекция Вагнера
+geolin = geographic_lines %>% 
+  filter(stringr::str_detect(geographic_lines$name_ru, 'Южный тропик|Северный тропик|
+                             Северный полярный круг|Южный полярный круг')) # для подписей линий
+```
+
+
+
+Визуализация карты
+```{r}
+col1 = c('#6600CC', '#0066CC', '#339999', '#FFFF99', '#FF6633', '#FF6666', '#FF3333') # цвета климатических поясов
+
+tm_shape(maps_w$ocean) +
+  tm_fill(col = 'grey') +
+  tm_borders(col = 'grey') +
+tm_shape(maps_w$rivers) +
+  tm_lines(col = 'grey') +
+tm_shape(maps_w$lakes) +
+  tm_fill(col = 'grey') +
+  tm_borders(col = 'grey') +
+tm_shape(maps_w$geographic_lines) +
+  tm_lines(col = '#5f5f5f', lty = 2, lwd = 0.1) +
+tm_shape(maps_w$climate) +
+  tm_polygons('Type', palette = col1, alpha = 0.5, title = '') +
+tm_layout(legend.position = c('left', 'bottom'),
+            fontfamily = 'OpenSans',
+            main.title.size = 1,
+            main.title = 'Климатические пояса',
+            main.title.position = 'center',
+            frame = FALSE,
+            legend.frame = FALSE,
+            legend.text.size = 1,
+            legend.hist.size = 1,
+            outer.margins = c(0.1, 0.1, 0.1, 0.1),
+            inner.margins = c(0, 0, 0, 0)) +
+tm_grid(x = seq(-180, 180, by = 30),
+          y = seq(-90, 90, by = 30),
+          lwd = 0.2,
+          col = '#5f5f5f',
+          projection = 4326,
+          labels.inside.frame = FALSE,
+          labels.format = list(fun = function(X) paste0(X, '°')))
+```
+
+Карта №2. «Изменения площади леса в эстуарии реки Конго (2000-2012 гг)»
+
+Задание входных данных,перепроецирование, визуализация
+
+```{r}
+# загрузка растровых слоев и отбор данных
+trees = stack('trees.tif') # площадь леса на 2010 год
+loss = stack('loss.tif')  #потери леса к 2012
+loss =  loss > 1 & loss < 13
+loss[loss == 0] = NA
+gain = stack('gain.tif')  # прирост леса к 2012
+gain[gain == 0] = NA
+mask = stack('mask.tif')  # водная поверхность
+mask = mask == 2
+mask[mask == 0] = NA
+
+tm_shape(trees) +
+  tm_raster(palette = 'Greens', 
+            title = '2000 г.,%',
+            legend.reverse = TRUE, 
+            legend.format = list(text.separator = '-')) +
+tm_shape(loss) +
+  tm_raster(palette = 'red', 
+            title = '', 
+            labels = 'Обезлесение к 2012 г') +
+tm_shape(gain) +
+  tm_raster(palette = 'blue', 
+            title = '', 
+            labels = 'Прирост леса к 2012 г') +
+tm_shape(mask) +
+  tm_raster(palette = 'lightblue',
+            legend.show = FALSE) +
+tm_credits('Источник: Hansen/UMD/Google/USGS/NASA', 
+           position = c('left', 'bottom')) +  tm_scale_bar(position=c('right', 'bottom')) +
+tm_layout(main.title = 'Изменение площади леса в эстуарии реки Конго (2000-2012 гг)', 
+          main.title.size = 1)
+```
+Карта №3. «Протяженность и электрификация железных дорог, 2016 год»
+
+Задание входных данных,перепроецирование, визуализация
+
+```{r}
+railw = get_eurostat('rail_if_line_na') %>%
+  filter(stringr::str_detect(time, '2016-01-01'))  # выбор данных на 2016 год
+cntr_brd =  get_eurostat_geospatial(output_class = 'sf', nuts_level = 0, year = '2016') %>%  # границы стран
+  st_as_sf()
+```
+
+```{r}
+# Задание проекции
+proj = lst(cntr_brd)
+proj = lapply(proj, st_transform, crs = '+proj=eqdc +lat_1=43 +lat_2=62')
+
+
+# присоединение таблиц
+countr_join = proj$cntr_brd %>% 
+  left_join(railw, by = c('geo' = 'geo')) %>%  
+  filter(!stringr::str_detect(tra_infr, 'TOTAL')) %>% # Фильтрация (электрифицированные и неэлектрифицированные)
+  filter(stringr::str_detect(tra_meas, 'TOTAL')) %>% # фильтрация по всем видам
+  group_by(geo) %>% 
+  mutate(rlen = sum(values)) %>%   # длина электрифицированных и неэлектрифицированных
+  mutate(percent = round(100 * values / rlen)) %>%  # подсчет доли
+  filter(!stringr::str_detect(tra_infr, 'RL_NELC')) # выбор  электрифицированных
+```
+
+
+```{r}
+# Визуализация
+tm_shape(proj$cntr_brd, xlim = c(-1200000, 3750000), ylim = c(3750000, 8700000)) +
+  tm_fill(col = 'gray') +
+tm_shape(countr_join) +
+  tm_polygons('percent',  n = 5, showNA = TRUE,
+              colorNA = 'gray', title = 'Электрификация, %', textNA = "Нет данных",
+              legend.reverse = TRUE, legend.format = list(text.separator = '-')) +
+tm_shape(st_point_on_surface(countr_join)) +
+  tm_bubbles('rlen', alpha = 0.5, title.size = "Электрификация, км",
+             legend.size.is.portrait = TRUE) +
+tm_credits('Данные: Eurostat', position = c('left', 'bottom')) +
+tm_layout(main.title = 'Протяженность и электрификация железных дорог, 2016 г.',
+          main.title.position = 'left',
+          main.title.size = 1.2,
+          legend.outside = TRUE)
+```
+
+
+

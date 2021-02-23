@@ -19,16 +19,16 @@ for (x in xls_files){
   prog_df=rbind(prog_df, df)
 }
 prog_df$month=rep(month.abb[c(1, 10:12, 2:9)], each = 54)
-write_xlsx(prog_df, "baikal.xlsx")
+# write_xlsx(prog_df, "baikal.xlsx")
 getwd()
 # добавление данных за 2015-2016 год 
 setwd('C:/Users/gorba/DataSciense/R_geographic/R_HydroPredictions/HW')
 df_15_16 = read_excel('new_data.xlsx', 
                       col_names = c('date', 'pred', 'obs'),  skip = 1 )
-
+df_15_16$date<-as.Date(strptime(as.character(df_15_16$date),format="%d/%m/%Y"))
 df_15_16$year = format(as.Date(df_15_16$date, format="%d/%m/%Y"),"%Y")
-df_15_16$year = as.numeric(as.character(df_15_16$year))
-df_15_16$month = rep(month.abb[c(1, 10:12, 2:9)])
+df_15_16$month = factor(prog_df$month, levels = month.abb, ordered = TRUE)
+df_15_16$month = rep(month.abb[c(1, 10:12, 2:9)],each = 54)
 
 i = 0
 for (i in length(prog_df$year)){

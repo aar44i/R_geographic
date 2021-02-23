@@ -1,0 +1,149 @@
+---
+title: "Spatial Point Patterns"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(sf)
+library(spatstat)
+```
+
+## Генерация точечных паттернов
+
+Установка параметров
+```{r}
+lambda = 300 # Интенсивность Пуассоновского процесса
+k = 10 # Интенсивность кластеров
+s = 0.05 # Ожидаемый размер кластера
+m = 30 # Ожидаемое количество точек в кластере
+r = 0.05 # Расстояние ингибиции (для регулярного процесса) 
+```
+
+Пуассоновский процесс
+```{r}
+pois = rpoispp(lambda)
+plot(pois)
+```
+
+Кластерный процесс Томаса (мягкий)
+```{r}
+thomas = rThomas(k, s, m)
+plot(thomas)
+```
+
+Кластерный процесс Матерна (хардкорный)
+```{r}
+matern = rMatClust(k, s, m)
+plot(matern)
+```
+
+Регулярный точечный процесс (последовательный)
+```{r}
+reg = rSSI(r, lambda)
+plot(reg)
+```
+
+## Свойства первого порядка (интенсивность)
+
+Соберем паттерны в список для удобства анализа
+```{r}
+patterns = lst(pois, thomas, matern, reg)
+```
+
+Плотность пространственного распределения
+```{r}
+purrr::imap(patterns, function(pat, name){
+  dens = density(pat, 0.05)
+  plot(dens, main = name)
+  plot(pat, col = 'white', cex = 0.5, add = T)
+  contour(dens, add=T)
+})
+```
+
+Тест хи-квадрат
+```{r}
+purrr::map(patterns, ~ quadrat.test(.x, nx = 5, ny = 5)) # случайный
+```
+
+Тест хи-квадрат (альтернативная гипотеза — о кластерности)
+```{r}
+purrr::map(patterns, ~ quadrat.test(.x, nx = 10, ny = 10, alternative = 'clustered')) # кластерный
+```
+
+Тест хи-квадрат (альтернативная гипотеза — о регулярности)
+```{r}
+purrr::map(patterns, ~ quadrat.test(.x, nx = 10, ny = 10, alternative = 'regular')) # регулярный
+```
+
+Индекс Моришита
+```{r}
+par(mfrow = c(1, 2))
+purrr::imap(patterns, function(pat, name){
+  plot(pat, main = name)
+  miplot(pat, type = "l")
+})
+```
+
+## Свойства второго порядка (зависимость)
+
+G-функция
+```{r}
+par(mfrow = c(1, 2))
+
+r = seq(0, 1, by = 0.01) 
+purrr::imap(patterns, function(pat, name){
+  plot(pat, main = name)
+  G = envelope(pat, Gest, r = r, nsim = 100)
+  plot(G, xlim = c(0, 0.1))
+})
+```
+
+K-функция
+```{r}
+par(mfrow = c(1, 2))
+
+r = seq(0, 1, by = 0.01) 
+purrr::imap(patterns, function(pat, name){
+  plot(pat, main = name)
+  K = envelope(pat, Kest, r = r, nsim = 100)
+  plot(K, xlim = c(0, 0.5))
+})
+```
+
+## Ковариаты
+
+Рассмотрим данные по расположению деревьев во влажном тропическом лесу:
+```{r}
+data(bei)
+plot(bei)
+```
+
+Потенциальные ковариаты, определяющие тип распределдения, могут быть связаны с рельефом:
+```{r}
+data(bei.extra)
+elev = bei.extra[[1]] # высота
+grad = bei.extra[[2]] # градиент (уклон)
+
+plot(elev)
+plot(bei, add = TRUE)
+plot(grad)
+plot(bei, col = 'white', cex = 0.2, add = TRUE)
+```
+
+Попробуем связать интенсивность процесса с уклоном и высотой:
+```{r}
+(model = ppm(bei ~ offset(log(grad)), data = bei.extra))
+plot(model, how = "image", se = FALSE)
+```
+
+Симуляция процесса с подобранными параметрами:
+```{r}
+sim = simulate(model)
+plot(elev)
+plot(sim[[1]], col = 'white', cex = 0.5, add = TRUE)
+```
+
+
+

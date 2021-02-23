@@ -121,3 +121,4 @@ cor.test(log10(dif_temp_night$mean_wind), dif_temp_night$delta_temp)
 
 linear_model = lm(log10(dif_temp$mean_wind) ~ dif_temp$delta_temp)
 summary(linear_model)
+
